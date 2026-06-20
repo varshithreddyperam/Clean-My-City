@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: clean-my-city
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:///cleanmycity.db
+      - key: HOST
+        value: 0.0.0.0
