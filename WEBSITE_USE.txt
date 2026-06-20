@@ -1,0 +1,61 @@
+================================================================================
+                    CleanMyCity - Website Purpose & How to Use
+================================================================================
+
+CleanMyCity is an interactive web platform designed to keep our urban spaces clean
+by combining artificial intelligence (AI), mapping technology, and gamification.
+
+The website serves two primary purposes: empowering citizens to clean their 
+neighborhoods, and assisting city administrators in managing waste collection.
+
+--------------------------------------------------------------------------------
+1. FOR CITIZENS: Earn Rewards for Keeping the City Clean
+--------------------------------------------------------------------------------
+Every day, we dispose of items. CleanMyCity turns proper waste disposal into a
+rewarding, game-like experience:
+
+* Sync & Login: 
+  Enter your username to access your citizen profile. As you dispose of waste,
+  you'll earn Eco Balance Points (XP) and unlock badges (like "Green Novice").
+
+* Dispose and Earn XP:
+  Take a photo of your trash being discarded in the correct container.
+  - Recyclables (e.g., plastic bottles, aluminum cans): Earn 50 XP.
+  - General Waste (e.g., non-recyclable trash): Earn 20 XP.
+  - Littered items (e.g., reporting garbage piles on the street): Earn 0 XP for
+    disposal, but logs a location report for cleanup.
+
+* AI Camera Verification:
+  Our built-in AI checks your photo in real-time. It ensures:
+  1. The photo is not a duplicate (checks for spam).
+  2. The trash bin or item is properly centered and visible in the photo.
+  3. The item is correctly identified as recyclable or non-recyclable.
+
+* Interactive Waste Map:
+  Use the map to spot active trash containers, recycling hubs, and littered 
+  streets in your neighborhood.
+
+--------------------------------------------------------------------------------
+2. FOR CITY OPERATIONS & SANITATION TEAMS (Ops Dashboard)
+--------------------------------------------------------------------------------
+Municipal authorities and sanitation squads use the dashboard side of the website
+to coordinate cleanup tasks:
+
+* Real-Time Incident Stream:
+  Whenever a citizen uploads a photo of a littered street, the report pops up on
+  the operations feed instantly using a live Server-Sent Events (SSE) feed.
+
+* Garbage Heatmap:
+  Administrators can look at the map to see exactly where litter reports are 
+  concentrated. This helps city councils decide where to place more trash cans
+  and dispatch street sweepers.
+
+* Smart Resource Dispatch:
+  Sanitation teams can view active coordinates of trash bins and littered locations
+  to plan their collection routes efficiently, saving fuel and time.
+
+--------------------------------------------------------------------------------
+Summary of the Flow:
+Citizen spots litter/disposes waste -> Takes a photo -> AI validates -> Map is
+updated -> Sanitation crew cleans up -> Citizen earns XP!
+================================================================================
