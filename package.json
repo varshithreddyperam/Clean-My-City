@@ -1,0 +1,11 @@
+{
+  "name": "cleanmycity",
+  "version": "1.0.0",
+  "description": "CleanMyCity - Urban AI Waste Management & Gamification System",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "\"C:\\Users\\HP\\AppData\\Local\\ms-playwright-go\\1.57.0\\node.exe\" backend/server.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

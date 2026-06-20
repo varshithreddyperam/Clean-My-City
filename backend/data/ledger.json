@@ -1,0 +1,52 @@
+{
+  "users": {
+    "citizen_zero": {
+      "username": "citizen_zero",
+      "points": 120,
+      "level": 1,
+      "badges": [
+        "Green Novice"
+      ],
+      "lastSubmissionTime": 0
+    },
+    "test_citizen": {
+      "username": "test_citizen",
+      "points": 50,
+      "level": 1,
+      "badges": [
+        "Green Novice",
+        "Sort Master"
+      ],
+      "lastSubmissionTime": 1781984817753
+    }
+  },
+  "ledger": [
+    {
+      "id": "ed5976ed-bf23-4c95-8a62-38cb7e8826c4",
+      "username": "test_citizen",
+      "imageHash": "hash_test_recycle_123",
+      "classification": "recyclable",
+      "coordinates": {
+        "lat": 40.7128,
+        "lng": -74.006
+      },
+      "status": "Spoof Rejected",
+      "statusReason": "Duplicate image hash detected (Anti-Spoofing)",
+      "timestamp": 1781984833617,
+      "rewardPoints": 0
+    },
+    {
+      "id": "b6750c8d-525d-4a05-9fc9-ab8616b88983",
+      "username": "test_citizen",
+      "imageHash": "hash_test_recycle_123",
+      "classification": "recyclable",
+      "coordinates": {
+        "lat": 40.7128,
+        "lng": -74.006
+      },
+      "status": "Points Awarded",
+      "timestamp": 1781984817753,
+      "rewardPoints": 50
+    }
+  ]
+}

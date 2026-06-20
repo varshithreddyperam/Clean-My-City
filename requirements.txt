@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+aiosqlite
+redis
+opencv-python-headless
+numpy
+python-multipart
+python-dotenv
+firebase-admin
+httpx
+sse-starlette

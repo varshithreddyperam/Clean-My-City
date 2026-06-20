@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CleanMyCity - Enterprise AI Waste Management Grid</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cyberblue: '#00f2fe',
+            cybernavy: '#0a0e17',
+            cyberdark: '#111827',
+            ecoaccent: '#10b981',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  
+  <!-- Leaflet Map CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="dark-mode bg-cybernavy text-gray-100 font-sans min-h-screen flex flex-col">
+  <!-- Header / Navigation -->
+  <header class="app-header h-[70px] border-b border-white/10 px-6 flex justify-between items-center bg-black/40 backdrop-blur-md sticky top-0 z-50">
+    <div class="logo flex items-center gap-2">
+      <i class="fa-solid fa-leaf text-2xl text-gradient"></i>
+      <span class="logo-text text-xl font-bold tracking-wider font-display">CleanMy<span class="text-ecoaccent">City</span></span>
+    </div>
+    
+    <div class="flex items-center gap-6">
+      <div class="system-status-indicator flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs text-ecoaccent font-semibold tracking-wider font-display">
+        <span class="status-dot green"></span>
+        <span class="status-label">FastAPI API Core Live</span>
+      </div>
+      
+      <nav class="app-tabs flex gap-2">
+        <button class="tab-btn active" data-tab="citizen-view">
+          <i class="fa-solid fa-mobile-screen"></i> Citizen Portal
+        </button>
+        <button class="tab-btn" data-tab="admin-view">
+          <i class="fa-solid fa-chart-line"></i> Ops Dashboard
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container flex-1 max-w-[1600px] w-full mx-auto p-6 overflow-y-auto">
+    
+    <!-- CITIZEN VIEW -->
+    <section id="citizen-view" class="tab-content active-content">
+      <div class="citizen-layout grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 items-start">
+        
+        <!-- Left: Auth & Profile Panel -->
+        <div class="citizen-sidebar card glass p-6 flex flex-col gap-6">
+          
+          <!-- Firebase Auth Mock Widget -->
+          <div class="user-auth-widget card glass-dark p-4 rounded-xl border border-white/5">
+            <h3 class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved text-cyan-400"></i> Auth Gateway
+            </h3>
+            <div class="flex flex-col gap-2.5">
+              <input type="text" id="auth-username-input" placeholder="Type citizen username..." class="w-full bg-slate-900 border border-slate-700/50 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-cyan-400 transition" value="citizen_zero">
+              <div class="flex gap-2">
+                <button id="btn-auth-mock-login" class="flex-grow bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 text-slate-950 font-bold py-2 px-3 rounded-lg text-xs transition duration-200">
+                  <i class="fa-solid fa-right-to-bracket"></i> Sync Account
+                </button>
+                <button id="btn-auth-logout" class="bg-slate-800 hover:bg-slate-700 text-gray-300 font-semibold py-2 px-3 rounded-lg text-xs transition duration-200">
+                  Sign Out
+                </button>
+              </div>
+              <div class="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
+                <span class="font-semibold text-gray-400">Active Token:</span>
+                <span id="auth-token-status" class="text-cyan-400 truncate max-w-[200px]">mock_token_citizen_zero</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Stats Widget -->
+          <div class="user-profile-widget border-b border-white/10 pb-6">
+            <div class="flex items-center gap-4 mb-4">
+              <div class="avatar w-12 h-12 rounded-full flex items-center justify-content-center text-xl bg-gradient-to-tr from-cyan-400 to-emerald-400 text-slate-950 font-bold">
+                <i class="fa-solid fa-user-astronaut"></i>
+              </div>
+              <div class="user-meta">
+                <div class="font-bold text-lg text-white" id="user-display-name">citizen_zero</div>
+                <span class="user-status-badge text-[10px] text-cyan-400 font-bold font-display uppercase tracking-wider">Level <span id="user-level-badge">1</span> Citizen</span>
+              </div>
+            </div>
+            
+            <div class="points-display bg-white/5 border border-dashed border-white/10 rounded-xl p-4 text-center mb-4">
+              <div class="points-val text-3xl font-extrabold text-cyan-400 font-display glow-text" id="user-points">0</div>
+              <div class="points-lbl text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Eco Balance (XP)</div>
+            </div>
+
+            <div class="level-progress-container flex flex-col gap-2">
+              <div class="level-labels flex justify-between text-xs font-semibold">
+                <span class="text-ecoaccent">Level <span id="user-level">1</span></span>
+                <span class="text-gray-400">Level <span id="next-level">2</span></span>
+              </div>
+              <div class="level-progress-bar w-full h-2.5 bg-white/5 rounded-full overflow-hidden">
+                <div id="user-level-progress" class="level-progress-fill h-full bg-gradient-to-r from-ecoaccent to-cyan-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+              <div class="xp-needed text-[10px] text-gray-500 text-right" id="xp-text">0 / 150 points to Level Up</div>
+            </div>
+          </div>
+
+          <!-- Badges shelf -->
+          <div class="badges-widget flex flex-col">
+            <h3 class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3">Earned Achievements</h3>
+            <div class="badges-grid grid grid-cols-2 gap-2" id="badges-list">
+              <!-- Dynamically populated badges -->
+              <div class="badge-item locked p-2 rounded-lg border border-white/5 text-center flex flex-col items-center justify-center">
+                <i class="fa-solid fa-award text-lg mb-1"></i>
+                <span class="text-[10px] font-bold">Green Novice</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Disposal Rules -->
+          <div class="disposal-rules border-t border-white/10 pt-6 flex flex-col gap-3">
+            <h3 class="text-xs uppercase tracking-wider text-gray-400 font-bold">Disposal Grid Credits</h3>
+            <div class="rule-item flex items-center gap-3 text-xs">
+              <span class="badge-rule recyclable bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2 py-0.5 rounded text-[10px] font-bold font-display w-16 text-center">50 PTS</span>
+              <span class="rule-text text-gray-400">Recyclable (Bottles, Cans) inside container</span>
+            </div>
+            <div class="rule-item flex items-center gap-3 text-xs">
+              <span class="badge-rule non-recyclable bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-bold font-display w-16 text-center">20 PTS</span>
+              <span class="rule-text text-gray-400">Non-recyclable trash inside container</span>
+            </div>
+            <div class="rule-item flex items-center gap-3 text-xs">
+              <span class="badge-rule littered bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded text-[10px] font-bold font-display w-16 text-center">0 PTS</span>
+              <span class="rule-text text-gray-400 text-red-300">Littering (ground disposal) = REJECTED</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Middle/Right: Vision Pipeline & Submission -->
+        <div class="citizen-main-content flex flex-col gap-6">
+          <div class="card glass p-6 flex flex-col gap-6">
+            <div class="panel-header border-b border-white/10 pb-4">
+              <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-camera-retro text-cyan-400"></i> Smart Camera AI Verification
+              </h2>
+              <span class="text-xs text-gray-400">Files preprocessed via OpenCV (Resized & Edged) before classification</span>
+            </div>
+
+            <!-- Upload and Asset Select Area -->
+            <div class="asset-selector-container grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <!-- Presets selections -->
+              <div class="assets-preset-selection flex flex-col gap-3">
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Test Asset Simulator:</label>
+                <div class="preset-buttons flex flex-col gap-2">
+                  <button class="btn btn-preset active justify-start bg-white/5 border border-white/10 hover:bg-white/10 p-3 rounded-lg text-left text-xs font-semibold text-gray-300 flex items-center gap-3" id="btn-preset-recycle" data-asset="recycle_box.png">
+                    <i class="fa-solid fa-recycle text-emerald-400"></i> Recyclable Box (Mock Pass)
+                  </button>
+                  <button class="btn btn-preset justify-start bg-white/5 border border-white/10 hover:bg-white/10 p-3 rounded-lg text-left text-xs font-semibold text-gray-300 flex items-center gap-3" id="btn-preset-bin" data-asset="clean_bin.png">
+                    <i class="fa-solid fa-trash-can text-cyan-400"></i> Correct Disposal (Mock Pass)
+                  </button>
+                  <button class="btn btn-preset justify-start bg-white/5 border border-white/10 hover:bg-white/10 p-3 rounded-lg text-left text-xs font-semibold text-gray-300 flex items-center gap-3" id="btn-preset-litter" data-asset="litter_road.png">
+                    <i class="fa-solid fa-triangle-exclamation text-red-400"></i> Littered bottle (Mock Fail)
+                  </button>
+                  <button class="btn btn-preset justify-start bg-white/5 border border-white/10 hover:bg-white/10 p-3 rounded-lg text-left text-xs font-semibold text-gray-300 flex items-center gap-3" id="btn-preset-spoof" data-asset="spoof_duplicate">
+                    <i class="fa-solid fa-clone text-amber-400"></i> Spoofing duplicate hash (Redis Block)
+                  </button>
+                </div>
+              </div>
+
+              <!-- Drag/Drop area -->
+              <div class="drag-drop-area cursor-pointer bg-black/30 border-2 border-dashed border-white/10 hover:border-cyan-400/50 hover:bg-black/40 rounded-xl h-[210px] flex justify-center items-center relative overflow-hidden transition duration-300" id="camera-drop-zone">
+                <input type="file" id="file-uploader" accept="image/*" style="display: none;">
+                <div class="drop-prompt text-center p-6 text-gray-400 flex flex-col items-center" id="drop-prompt-text">
+                  <i class="fa-solid fa-folder-open text-3xl mb-3 text-white/40"></i>
+                  <p class="text-sm font-semibold text-white">Click anywhere in this box to select a photo from your PC</p>
+                  <span class="text-[10px] text-gray-500 mt-2 block">Supported formats: PNG, JPG, JPEG (will process on backend)</span>
+                </div>
+                
+                <div class="cam-fallback-container hidden w-full h-full bg-black flex justify-center items-center" id="cam-display-container">
+                  <img id="simulated-image-view" class="sim-img-el max-w-full max-h-full object-contain" alt="Source Waste Disposal">
+                  <div class="scanner-line absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
+                </div>
+
+                <!-- Hover upload overlay prompt -->
+                <div class="absolute inset-0 bg-cybernavy/90 backdrop-blur-[2px] flex flex-col justify-center items-center opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" id="drag-hover-overlay">
+                  <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2 text-cyan-400"></i>
+                  <span class="text-xs font-bold text-white uppercase tracking-wider">Drag & Drop Image Here</span>
+                  <span class="text-[10px] text-gray-400 mt-1">or Click to select photo from PC</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pipeline Canvases Preprocessing -->
+            <div class="pipeline-visualizer grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+              <div class="pipeline-step flex flex-col gap-2">
+                <div class="step-title text-[10px] font-bold uppercase tracking-wider text-gray-500">1. Source Load</div>
+                <div class="canvas-wrapper bg-black/40 border border-white/5 rounded-lg h-28 flex justify-center items-center overflow-hidden relative">
+                  <canvas id="canvas-grayscale" class="w-full h-full object-contain"></canvas>
+                  <div class="canvas-placeholder absolute text-gray-600 text-lg" id="ph-grayscale"><i class="fa-solid fa-image"></i></div>
+                </div>
+              </div>
+              
+              <div class="pipeline-step flex flex-col gap-2">
+                <div class="step-title text-[10px] font-bold uppercase tracking-wider text-gray-500">2. OpenCV Grayscale & Edge</div>
+                <div class="canvas-wrapper bg-black/40 border border-white/5 rounded-lg h-28 flex justify-center items-center overflow-hidden relative">
+                  <canvas id="canvas-edges" class="w-full h-full object-contain"></canvas>
+                  <div class="canvas-placeholder absolute text-gray-600 text-lg" id="ph-edges"><i class="fa-solid fa-wave-square"></i></div>
+                </div>
+              </div>
+              
+              <div class="pipeline-step flex flex-col gap-2">
+                <div class="step-title text-[10px] font-bold uppercase tracking-wider text-gray-500">3. OpenCV Contours Align</div>
+                <div class="canvas-wrapper bg-black/40 border border-white/5 rounded-lg h-28 flex justify-center items-center overflow-hidden relative">
+                  <canvas id="canvas-contours" class="w-full h-full object-contain"></canvas>
+                  <div class="canvas-placeholder absolute text-gray-600 text-lg" id="ph-contours"><i class="fa-solid fa-circle-nodes"></i></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Classification and Action triggers -->
+            <div class="results-action-panel grid grid-cols-1 md:grid-cols-[1fr_220px] gap-6 items-center border-t border-white/10 pt-4">
+              <div class="classification-output card glass-dark p-4 rounded-xl">
+                <div class="class-title text-xs font-bold text-gray-400 mb-2">Neural inference & Preprocessing statistics:</div>
+                <div class="class-results flex flex-col gap-2 text-xs">
+                  <div class="class-metric flex justify-between">
+                    <span class="text-gray-400">Class Verdict:</span>
+                    <span class="font-bold text-white text-gradient" id="ai-detected-category">---</span>
+                  </div>
+                  <div class="class-metric flex justify-between">
+                    <span class="text-gray-400">Inference Confidence:</span>
+                    <span class="font-bold text-white" id="ai-confidence">0%</span>
+                  </div>
+                  <div class="class-metric flex justify-between">
+                    <span class="text-gray-400">OpenCV Framing Alignment:</span>
+                    <span class="font-bold" id="ai-edge-verdict">---</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="submit-action-container flex flex-col gap-2">
+                <div class="cooldown-timer-widget hidden flex items-center justify-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 p-2.5 rounded-lg text-xs" id="cooldown-widget">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                  <span>Cooldown active: <strong id="cooldown-timer">15s</strong></span>
+                </div>
+                
+                <button class="btn btn-primary bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-bold py-3 px-6 rounded-lg text-sm transition duration-300 disabled:opacity-30 disabled:cursor-not-allowed w-full flex justify-center items-center gap-2" id="btn-submit-disposal" disabled>
+                  <i class="fa-solid fa-circle-check"></i> Submit to AI Grid
+                </button>
+              </div>
+            </div>
+
+            <!-- Validation Feedback overlay -->
+            <div class="validation-status-banner idle rounded-xl p-4 flex border-l-4 border-gray-600 bg-white/5" id="validation-banner">
+              <div class="banner-content flex gap-3 items-center">
+                <i class="fa-solid fa-info-circle text-xl text-gray-400" id="banner-icon"></i>
+                <div class="banner-text-content">
+                  <h4 class="text-xs font-bold text-white uppercase tracking-wider" id="banner-title">Idle</h4>
+                  <p class="text-xs text-gray-400" id="banner-description">Load an image to process locally through OpenCV edge checks.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ADMIN / URBAN OPERATIONS VIEW -->
+    <section id="admin-view" class="tab-content">
+      <div class="admin-grid grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6">
+        
+        <!-- Live City Monitoring Map (Full Width Top) -->
+        <div class="card glass p-6 map-panel col-span-1 lg:col-span-2">
+          <div class="panel-header flex justify-between items-center flex-wrap gap-4 border-b border-white/10 pb-4 mb-4">
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-map-location-dot text-gradient"></i> Urban Disposal Monitoring Matrix
+            </h2>
+            <div class="map-legend flex gap-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              <span class="legend-item flex items-center gap-1.5"><span class="dot green w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span> Recycle Pass</span>
+              <span class="legend-item flex items-center gap-1.5"><span class="dot blue w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></span> Standard Pass</span>
+              <span class="legend-item flex items-center gap-1.5"><span class="dot red w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span> Litter Warn</span>
+              <span class="legend-item flex items-center gap-1.5"><span class="dot orange w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]"></span> Spoof Block</span>
+            </div>
+          </div>
+          <div class="city-map-container bg-black/40 border border-white/5 rounded-xl h-[360px] relative overflow-hidden">
+            <div id="city-map" class="w-full h-full block"></div>
+            <div class="map-overlay-stats absolute bottom-4 left-4 flex gap-2 z-[1000]">
+              <div class="overlay-stat bg-black/80 border border-white/10 p-3 rounded-lg flex flex-col">
+                <span class="lbl text-[9px] text-gray-500 font-bold uppercase tracking-wider">Active Grid Sectors</span>
+                <span class="val text-sm font-bold text-cyan-400 font-display" id="map-active-sectors">12/12</span>
+              </div>
+              <div class="overlay-stat bg-black/80 border border-white/10 p-3 rounded-lg flex flex-col">
+                <span class="lbl text-[9px] text-gray-500 font-bold uppercase tracking-wider">Total Monitored Nodes</span>
+                <span class="val text-sm font-bold text-cyan-400 font-display" id="map-monitored-nodes">4,200</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Left Admin panel: Simulator Control Hub -->
+        <div class="card glass p-6 simulator-control-panel flex flex-col gap-6">
+          <div class="panel-header border-b border-white/10 pb-4">
+            <h2 class="text-lg font-bold text-white">Urban Simulator Controller</h2>
+            <span class="text-xs text-gray-400">Inject high concurrent transactions to stress-test locks & ledger</span>
+          </div>
+
+          <div class="simulator-toggle-area flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl">
+            <div class="sim-status-widget flex flex-col gap-1">
+              <span class="sim-label text-xs text-gray-400">Simulation Grid State:</span>
+              <span class="sim-state-text text-red-500 font-bold font-display text-sm uppercase tracking-wider" id="sim-state-badge">OFFLINE</span>
+            </div>
+            
+            <div class="sim-actions flex gap-2">
+              <button class="btn btn-success bg-emerald-500/10 border border-emerald-500 hover:bg-emerald-500 hover:text-slate-950 font-bold text-ecoaccent py-2 px-4 rounded-lg text-xs transition duration-200" id="btn-start-sim">
+                <i class="fa-solid fa-play"></i> Start
+              </button>
+              <button class="btn btn-danger bg-red-500/10 border border-red-500 hover:bg-red-500 hover:text-white font-bold text-red-500 py-2 px-4 rounded-lg text-xs transition duration-200 disabled:opacity-30 disabled:cursor-not-allowed" id="btn-stop-sim" disabled>
+                <i class="fa-solid fa-square"></i> Stop
+              </button>
+            </div>
+          </div>
+
+          <div class="slider-group flex flex-col gap-2">
+            <div class="slider-labels flex justify-between text-xs font-semibold text-gray-300">
+              <span>Concurrency rate (Transactions/Min)</span>
+              <span id="slider-val-label" class="text-cyan-400">120 / min</span>
+            </div>
+            <input type="range" id="sim-rate-slider" min="10" max="600" step="10" value="120" class="custom-slider w-full accent-cyan-400">
+            <div class="slider-ticks flex justify-between text-[10px] text-gray-500 mt-1">
+              <span>10/min</span>
+              <span>300/min</span>
+              <span>600/min</span>
+            </div>
+          </div>
+
+          <!-- Stats list grid -->
+          <div class="dashboard-stats-grid grid grid-cols-2 gap-4">
+            <div class="stat-card glass-dark p-3 rounded-lg border border-white/5 flex items-center gap-3">
+              <span class="stat-icon text-lg w-9 h-9 bg-cyan-500/10 text-cyan-400 rounded-lg flex items-center justify-center"><i class="fa-solid fa-server"></i></span>
+              <div class="stat-content flex flex-col">
+                <span class="stat-lbl text-[9px] text-gray-500 uppercase tracking-wider font-bold">Simulator CPU</span>
+                <span class="stat-val text-sm font-bold font-display" id="stat-cpu">5%</span>
+              </div>
+            </div>
+            <div class="stat-card glass-dark p-3 rounded-lg border border-white/5 flex items-center gap-3">
+              <span class="stat-icon text-lg w-9 h-9 bg-emerald-500/10 text-ecoaccent rounded-lg flex items-center justify-center"><i class="fa-solid fa-database"></i></span>
+              <div class="stat-content flex flex-col">
+                <span class="stat-lbl text-[9px] text-gray-500 uppercase tracking-wider font-bold">Approved Ledger</span>
+                <span class="stat-val text-sm font-bold font-display" id="stat-points-awarded">0</span>
+              </div>
+            </div>
+            <div class="stat-card glass-dark p-3 rounded-lg border border-white/5 flex items-center gap-3">
+              <span class="stat-icon text-lg w-9 h-9 bg-amber-500/10 text-amber-400 rounded-lg flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></span>
+              <div class="stat-content flex flex-col">
+                <span class="stat-lbl text-[9px] text-gray-500 uppercase tracking-wider font-bold">Spoofs Blocked</span>
+                <span class="stat-val text-sm font-bold font-display" id="stat-spoofs">0</span>
+              </div>
+            </div>
+            <div class="stat-card glass-dark p-3 rounded-lg border border-white/5 flex items-center gap-3">
+              <span class="stat-icon text-lg w-9 h-9 bg-blue-500/10 text-blue-400 rounded-lg flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></span>
+              <div class="stat-content flex flex-col">
+                <span class="stat-lbl text-[9px] text-gray-500 uppercase tracking-wider font-bold">Active Queue</span>
+                <span class="stat-val text-sm font-bold font-display" id="stat-queue">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-danger-actions border-t border-white/10 pt-4 mt-2">
+            <button class="btn btn-secondary w-full bg-slate-800/80 hover:bg-slate-700/80 border border-white/5 text-gray-300 py-3 px-4 rounded-lg text-xs font-bold transition duration-200" id="btn-reset-db">
+              <i class="fa-solid fa-trash-arrow-up"></i> Clear Ledger & Reset DB
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Admin panel: Live Ledger & Alerts Feed -->
+        <div class="card glass p-6 ledger-logs-panel flex flex-col gap-4">
+          <div class="panel-header border-b border-white/10 pb-4">
+            <h2 class="text-lg font-bold text-white">Real-Time AI Ledger Auditing</h2>
+            <span class="text-xs text-gray-400">Transaction logs synced live from SQL / SQLite database</span>
+          </div>
+
+          <div class="logs-feed-container bg-black/40 border border-white/5 rounded-xl overflow-hidden h-[360px] flex flex-col">
+            <div class="logs-header grid grid-cols-[70px_100px_90px_1fr] px-4 py-2 bg-white/5 border-b border-white/10 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+              <span>Time</span>
+              <span>Citizen</span>
+              <span>Category</span>
+              <span>Workflow State</span>
+            </div>
+            <div class="logs-ticker flex-1 overflow-y-auto" id="ledger-logs-ticker">
+              <div class="log-entry empty text-center text-gray-500 text-xs py-10 px-4">
+                No active traffic logs. Start simulator or upload citizen images to audit ledger state machine.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Transaction Details Overlay Modal -->
+  <div id="tx-details-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden justify-content-center items-center p-4">
+    <div class="card glass max-w-lg w-full p-6 flex flex-col gap-5 border border-white/10 shadow-2xl relative animate-fadeIn">
+      <button id="btn-close-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      
+      <div class="modal-header border-b border-white/10 pb-3">
+        <h3 class="text-md font-bold text-gradient font-display flex items-center gap-2">
+          <i class="fa-solid fa-receipt"></i> Transaction Audit Record
+        </h3>
+        <span class="text-[10px] text-gray-500 font-mono" id="modal-tx-id">id: ---</span>
+      </div>
+
+      <div class="modal-body flex flex-col gap-4">
+        <!-- Image Preview Frame -->
+        <div class="image-preview-frame bg-black/40 border border-white/5 rounded-xl h-48 flex justify-center items-center overflow-hidden relative">
+          <img id="modal-image-view" class="max-w-full max-h-full object-contain" src="" alt="Uploaded disposal photo">
+          <div id="modal-image-placeholder" class="absolute text-gray-600 text-3xl"><i class="fa-solid fa-image"></i></div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="grid grid-cols-2 gap-3 text-xs bg-white/5 p-4 rounded-xl border border-white/5">
+          <div class="flex flex-col">
+            <span class="text-gray-500 font-semibold uppercase text-[9px]">Citizen node</span>
+            <span class="text-white font-bold" id="modal-username">---</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-gray-500 font-semibold uppercase text-[9px]">Credits Awarded</span>
+            <span class="font-bold text-ecoaccent" id="modal-reward">---</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-gray-500 font-semibold uppercase text-[9px]">Waste Category</span>
+            <span class="font-bold text-cyan-400" id="modal-class">---</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-gray-500 font-semibold uppercase text-[9px]">Verification Status</span>
+            <span class="log-status-badge mt-0.5" id="modal-status">---</span>
+          </div>
+          <div class="flex flex-col col-span-2">
+            <span class="text-gray-500 font-semibold uppercase text-[9px]">GPS Coordinates</span>
+            <span class="text-gray-300 font-mono" id="modal-gps">---</span>
+          </div>
+          <div class="flex flex-col col-span-2" id="modal-reason-container" style="display: none;">
+            <span class="text-red-400 font-semibold uppercase text-[9px]">Verdict Reason</span>
+            <span class="text-red-300" id="modal-reason">---</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer border-t border-white/10 text-center py-4 bg-black/20 text-xs text-gray-500">
+    <p>CleanMyCity Urban AI Grid - Running asynchronously on Python 3.11+ FastAPI backend with OpenCV and SQLite/PostgreSQL. (2026)</p>
+  </footer>
+
+  <!-- App Main Orchestrator -->
+  <script type="module" src="/main.js"></script>
+</body>
+</html>
