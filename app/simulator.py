@@ -238,7 +238,7 @@ class UrbanSimulator:
             if not user:
                 return
 
-            if approve and tx.classification != "littered":
+            if approve and tx.classification != "littered" and tx.classification != "invalid_disposal":
                 tx.status = "Points Awarded"
                 user.points += tx.reward_points
                 
@@ -279,7 +279,12 @@ class UrbanSimulator:
                 user.set_badges_list(badges)
             else:
                 tx.status = "Rejected"
-                tx.status_reason = "Littering detected: Trash not properly placed inside container." if tx.classification == "littered" else "Verification failed."
+                if tx.classification == "invalid_disposal":
+                    tx.status_reason = "Human presence detected. Not a valid waste item."
+                elif tx.classification == "littered":
+                    tx.status_reason = "Littering detected: Trash not properly placed inside container."
+                else:
+                    tx.status_reason = "Verification failed."
                 tx.reward_points = 0
 
             await session.commit()

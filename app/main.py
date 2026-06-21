@@ -321,7 +321,7 @@ async def submit_disposal(
     })
 
     # Trigger Async Pipeline Completion Task (simulates verification pipeline delay)
-    asyncio.create_task(simulator.finalize_verification(tx_id, classification != "littered"))
+    asyncio.create_task(simulator.finalize_verification(tx_id, classification not in ["littered", "invalid_disposal"]))
 
     return {
         "message": "Disposal registered. Pending verification.",

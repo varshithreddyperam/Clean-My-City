@@ -22,13 +22,14 @@ def calculate_dhash(img_gray: np.ndarray) -> str:
             decimal_val = 0
     return "".join(hex_string)
 
-def run_opencv_preprocessing(image_bytes: bytes) -> Tuple[str, bool, float]:
+def run_opencv_preprocessing(image_bytes: bytes) -> Tuple[str, bool, float, bool]:
     """
     Applies OpenCV preprocessing:
     1. Grayscale Conversion
     2. Canny Edge Detection
     3. Contours extraction & bounding framing checks
-    Returns: (image_hash_hex, framing_passed, edge_density)
+    4. Face detection
+    Returns: (image_hash_hex, framing_passed, edge_density, has_face)
     """
     # Decode bytes to OpenCV Mat
     nparr = np.frombuffer(image_bytes, np.uint8)
@@ -37,7 +38,7 @@ def run_opencv_preprocessing(image_bytes: bytes) -> Tuple[str, bool, float]:
     if img is None:
         # Fallback hash if image corrupted
         fallback_hash = hashlib.md5(image_bytes).hexdigest()
-        return fallback_hash, False, 0.0
+        return fallback_hash, False, 0.0, False
 
     # 1. Grayscale Conversion
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -74,7 +75,23 @@ def run_opencv_preprocessing(image_bytes: bytes) -> Tuple[str, bool, float]:
         if area_ratio > 0.04:
             framing_passed = True
 
-    return img_hash, framing_passed, edge_density
+    # 4. Face Detection (Haar Cascades)
+    import os
+    cascade_path = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
+    has_face = False
+    if os.path.exists(cascade_path):
+        try:
+            face_cascade = cv2.CascadeClassifier(cascade_path)
+            if not face_cascade.empty():
+                # Dynamically calculate minSize as 15% of the smallest image dimension
+                h_img, w_img = gray.shape[:2]
+                min_dim = max(int(min(h_img, w_img) * 0.15), 30)
+                faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(min_dim, min_dim))
+                has_face = len(faces) > 0
+        except Exception as e:
+            print(f"[Vision] Face detection error: {e}")
+
+    return img_hash, framing_passed, edge_density, has_face
 
 async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, float, str, bool]:
     """
@@ -83,8 +100,12 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
     and returns: (classification, confidence, image_hash, framing_passed).
     """
     # Perform OpenCV preprocessing
-    image_hash, framing_passed, edge_density = run_opencv_preprocessing(image_bytes)
+    image_hash, framing_passed, edge_density, has_face = run_opencv_preprocessing(image_bytes)
     
+    # If face is detected, explicitly reject the disposal as invalid
+    if has_face:
+        return "invalid_disposal", 0.99, image_hash, False
+
     # Classify based on file context tags (Mock AI classification)
     filename_lower = filename.lower()
     
