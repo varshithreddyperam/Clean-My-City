@@ -55,3 +55,7 @@ app/templates/uploads/
 
 # ONNX Models
 *.onnx
+*.onnx.data
+
+# Datasets
+dataset/

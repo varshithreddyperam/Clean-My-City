@@ -186,40 +186,53 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
                 top_idx = int(np.argmax(probs))
                 confidence = float(probs[top_idx])
                 
-                # Define waste classes (extended for robustness)
-                recyclable_ids = {440, 737, 898, 907, 478, 519, 653, 724, 897}
-                non_recyclable_ids = {412, 728, 463, 968, 636, 700, 504, 811, 923}
+                num_classes = preds.shape[1]
                 
-                # If filename has a keyword:
-                if has_keyword:
-                    # We always trust the keyword, but we can verify if the DNN matches it
-                    if is_litter:
+                # If custom 3-class model:
+                if num_classes == 3:
+                    if top_idx == 0:
+                        classification = "littered" if is_litter else "recyclable"
+                    elif top_idx == 1:
+                        classification = "littered" if is_litter else "non-recyclable"
+                    elif top_idx == 2:
                         classification = "littered"
-                        if top_idx in recyclable_ids or top_idx in non_recyclable_ids:
-                            pass
-                        else:
-                            confidence = 0.91 + np.random.uniform(-0.02, 0.02)
-                    elif is_recyclable:
-                        classification = "recyclable"
-                        if top_idx in recyclable_ids:
-                            pass
-                        else:
-                            confidence = 0.94 + np.random.uniform(-0.02, 0.02)
-                    elif is_trash:
-                        classification = "non-recyclable"
-                        if top_idx in non_recyclable_ids:
-                            pass
-                        else:
-                            confidence = 0.88 + np.random.uniform(-0.02, 0.02)
                     dnn_success = True
                 else:
-                    # If no keyword, DNN must classify the image as a waste class with confidence >= 0.25
-                    if top_idx in recyclable_ids and confidence >= 0.25:
-                        classification = "littered" if is_litter else "recyclable"
+                    # Default 1000-class ImageNet model logic
+                    # Define waste classes (extended for robustness)
+                    recyclable_ids = {440, 737, 898, 907, 478, 519, 653, 724, 897}
+                    non_recyclable_ids = {412, 728, 463, 968, 636, 700, 504, 811, 923}
+                    
+                    # If filename has a keyword:
+                    if has_keyword:
+                        # We always trust the keyword, but we can verify if the DNN matches it
+                        if is_litter:
+                            classification = "littered"
+                            if top_idx in recyclable_ids or top_idx in non_recyclable_ids:
+                                pass
+                            else:
+                                confidence = 0.91 + np.random.uniform(-0.02, 0.02)
+                        elif is_recyclable:
+                            classification = "recyclable"
+                            if top_idx in recyclable_ids:
+                                pass
+                            else:
+                                confidence = 0.94 + np.random.uniform(-0.02, 0.02)
+                        elif is_trash:
+                            classification = "non-recyclable"
+                            if top_idx in non_recyclable_ids:
+                                pass
+                            else:
+                                confidence = 0.88 + np.random.uniform(-0.02, 0.02)
                         dnn_success = True
-                    elif top_idx in non_recyclable_ids and confidence >= 0.25:
-                        classification = "littered" if is_litter else "non-recyclable"
-                        dnn_success = True
+                    else:
+                        # If no keyword, DNN must classify the image as a waste class with confidence >= 0.25
+                        if top_idx in recyclable_ids and confidence >= 0.25:
+                            classification = "littered" if is_litter else "recyclable"
+                            dnn_success = True
+                        elif top_idx in non_recyclable_ids and confidence >= 0.25:
+                            classification = "littered" if is_litter else "non-recyclable"
+                            dnn_success = True
         except Exception as e:
             print(f"[Vision] Inference error: {e}")
 
