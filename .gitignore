@@ -52,3 +52,6 @@ desktop.ini
 
 # User Uploads
 app/templates/uploads/
+
+# ONNX Models
+*.onnx
