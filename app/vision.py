@@ -102,29 +102,42 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
     # Perform OpenCV preprocessing
     image_hash, framing_passed, edge_density, has_face = run_opencv_preprocessing(image_bytes)
     
-    # If face is detected, explicitly reject the disposal as invalid
+    # 1. Human presence check
     if has_face:
         return "invalid_disposal", 0.99, image_hash, False
 
-    # Classify based on file context tags (Mock AI classification)
     filename_lower = filename.lower()
     
-    if "recycle" in filename_lower:
+    # 2. Check for non-garbage keywords explicitly
+    non_garbage_keywords = [
+        "friend", "person", "human", "face", "selfie", "book", "laptop", "computer", 
+        "mouse", "keyboard", "chair", "table", "desk", "phone", "mobile", "car", 
+        "bike", "dog", "cat", "animal", "plant", "tree", "flower", "room", "wall", 
+        "house", "building", "interior", "sofa", "furniture", "keyboard", "monitor"
+    ]
+    if any(kw in filename_lower for kw in non_garbage_keywords):
+        return "unknown_object", 0.95, image_hash, False
+
+    # 3. Check for valid garbage/disposal keywords
+    recyclable_keywords = ["recycle", "bottle", "can", "box", "paper", "plastic", "glass", "cup", "cardboard", "container", "jar"]
+    non_recyclable_keywords = ["bin", "trash", "garbage", "waste", "rubbish", "refuse", "dustbin", "bag", "wrapper"]
+    littered_keywords = ["litter", "road", "street", "highway", "sidewalk", "dirty", "littered_street"]
+
+    is_recyclable = any(kw in filename_lower for kw in recyclable_keywords)
+    is_trash = any(kw in filename_lower for kw in non_recyclable_keywords)
+    is_litter = any(kw in filename_lower for kw in littered_keywords)
+
+    if is_recyclable:
         classification = "recyclable"
         confidence = 0.94 + np.random.uniform(-0.02, 0.02)
-    elif "bin" in filename_lower or "trash" in filename_lower:
+    elif is_trash:
         classification = "non-recyclable"
         confidence = 0.88 + np.random.uniform(-0.03, 0.03)
-    elif "litter" in filename_lower or "road" in filename_lower or "street" in filename_lower:
+    elif is_litter:
         classification = "littered"
         confidence = 0.91 + np.random.uniform(-0.02, 0.02)
     else:
-        # Default fallback based on edge features: high edge details -> recyclable, otherwise standard trash
-        if edge_density > 0.08:
-            classification = "recyclable"
-            confidence = 0.76
-        else:
-            classification = "non-recyclable"
-            confidence = 0.82
+        # Generic names or other unrecognized filenames are rejected
+        return "unknown_object", 0.85, image_hash, False
             
     return classification, float(confidence), image_hash, framing_passed

@@ -238,7 +238,7 @@ class UrbanSimulator:
             if not user:
                 return
 
-            if approve and tx.classification != "littered" and tx.classification != "invalid_disposal":
+            if approve and tx.classification != "littered" and tx.classification != "invalid_disposal" and tx.classification != "unknown_object":
                 tx.status = "Points Awarded"
                 user.points += tx.reward_points
                 
@@ -281,6 +281,8 @@ class UrbanSimulator:
                 tx.status = "Rejected"
                 if tx.classification == "invalid_disposal":
                     tx.status_reason = "Human presence detected. Not a valid waste item."
+                elif tx.classification == "unknown_object":
+                    tx.status_reason = "Unrecognized item. For the mock AI prototype, please rename your file to contain a waste keyword (e.g. 'bottle.jpg', 'trash_bin.jpg', 'litter_street.jpg')."
                 elif tx.classification == "littered":
                     tx.status_reason = "Littering detected: Trash not properly placed inside container."
                 else:
