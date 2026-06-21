@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import hashlib
+import os
+import urllib.request
 from typing import Tuple
 
 def calculate_dhash(img_gray: np.ndarray) -> str:
@@ -147,6 +149,21 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
 
     # 3. Real Neural Network classification using MobileNetV2 ONNX
     dnn_net = get_net()
+    dnn_success = False
+    classification = "unknown_object"
+    confidence = 0.0
+
+    # Check for valid garbage/disposal keywords in filename first
+    filename_lower = filename.lower()
+    recyclable_keywords = ["recycle", "bottle", "can", "box", "paper", "plastic", "glass", "cup", "cardboard", "container", "jar"]
+    non_recyclable_keywords = ["bin", "trash", "garbage", "waste", "rubbish", "refuse", "dustbin", "bag", "wrapper"]
+    littered_keywords = ["litter", "road", "street", "highway", "sidewalk", "dirty", "littered_street", "garbage_pile"]
+
+    is_recyclable = any(kw in filename_lower for kw in recyclable_keywords)
+    is_trash = any(kw in filename_lower for kw in non_recyclable_keywords)
+    is_litter = any(kw in filename_lower for kw in littered_keywords)
+    has_keyword = is_recyclable or is_trash or is_litter
+
     if dnn_net is not None:
         try:
             nparr = np.frombuffer(image_bytes, np.uint8)
@@ -169,62 +186,59 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
                 top_idx = int(np.argmax(probs))
                 confidence = float(probs[top_idx])
                 
-                # Define waste classes
-                recyclable_ids = {440, 737, 898, 907, 478, 519, 653}
-                non_recyclable_ids = {412, 728, 463, 968, 636, 700}
+                # Define waste classes (extended for robustness)
+                recyclable_ids = {440, 737, 898, 907, 478, 519, 653, 724, 897}
+                non_recyclable_ids = {412, 728, 463, 968, 636, 700, 504, 811, 923}
                 
-                filename_lower = filename.lower()
-                is_litter_context = any(kw in filename_lower for kw in ["litter", "road", "street", "highway", "sidewalk", "dirty"])
-                
-                if confidence >= 0.35:
-                    if top_idx in recyclable_ids:
-                        if is_litter_context:
-                            return "littered", confidence, image_hash, framing_passed
-                        else:
-                            return "recyclable", confidence, image_hash, framing_passed
-                    elif top_idx in non_recyclable_ids:
-                        if is_litter_context:
-                            return "littered", confidence, image_hash, framing_passed
-                        else:
-                            return "non-recyclable", confidence, image_hash, framing_passed
-                
-                # If predicted class is not a waste class or confidence is too low, reject
-                return "unknown_object", confidence, image_hash, False
+                # If filename has a keyword:
+                if has_keyword:
+                    # We only reject it if the DNN predicts a non-waste class with extremely high confidence
+                    if top_idx not in recyclable_ids and top_idx not in non_recyclable_ids and confidence >= 0.75:
+                        return "unknown_object", confidence, image_hash, False
+                    else:
+                        # Otherwise trust the keyword
+                        if is_litter:
+                            classification = "littered"
+                        elif is_recyclable:
+                            classification = "recyclable"
+                        elif is_trash:
+                            classification = "non-recyclable"
+                        dnn_success = True
+                else:
+                    # If no keyword, DNN must classify the image as a waste class with confidence >= 0.25
+                    if top_idx in recyclable_ids and confidence >= 0.25:
+                        classification = "littered" if is_litter else "recyclable"
+                        dnn_success = True
+                    elif top_idx in non_recyclable_ids and confidence >= 0.25:
+                        classification = "littered" if is_litter else "non-recyclable"
+                        dnn_success = True
         except Exception as e:
             print(f"[Vision] Inference error: {e}")
 
-    # 4. Fallback mock keyword classification (if DNN failed/offline)
-    filename_lower = filename.lower()
-    
+    if dnn_success:
+        return classification, confidence, image_hash, framing_passed
+
+    # 4. Fallback mock keyword classification (if DNN failed/offline or low confidence without keywords)
     # Check for non-garbage keywords explicitly
     non_garbage_keywords = [
         "friend", "person", "human", "face", "selfie", "book", "laptop", "computer", 
         "mouse", "keyboard", "chair", "table", "desk", "phone", "mobile", "car", 
         "bike", "dog", "cat", "animal", "plant", "tree", "flower", "room", "wall", 
-        "house", "building", "interior", "sofa", "furniture", "keyboard", "monitor"
+        "house", "building", "interior", "sofa", "furniture", "monitor"
     ]
     if any(kw in filename_lower for kw in non_garbage_keywords):
-        return "unknown_object", 0.95, image_hash, False
-
-    # Check for valid garbage/disposal keywords
-    recyclable_keywords = ["recycle", "bottle", "can", "box", "paper", "plastic", "glass", "cup", "cardboard", "container", "jar"]
-    non_recyclable_keywords = ["bin", "trash", "garbage", "waste", "rubbish", "refuse", "dustbin", "bag", "wrapper"]
-    littered_keywords = ["litter", "road", "street", "highway", "sidewalk", "dirty", "littered_street"]
-
-    is_recyclable = any(kw in filename_lower for kw in recyclable_keywords)
-    is_trash = any(kw in filename_lower for kw in non_recyclable_keywords)
-    is_litter = any(kw in filename_lower for kw in littered_keywords)
+        return "unknown_object", 0.95 if confidence == 0.0 else confidence, image_hash, False
 
     if is_recyclable:
         classification = "recyclable"
-        confidence = 0.94 + np.random.uniform(-0.02, 0.02)
+        confidence = 0.94 if confidence == 0.0 else confidence
     elif is_trash:
         classification = "non-recyclable"
-        confidence = 0.88 + np.random.uniform(-0.03, 0.03)
+        confidence = 0.88 if confidence == 0.0 else confidence
     elif is_litter:
         classification = "littered"
-        confidence = 0.91 + np.random.uniform(-0.02, 0.02)
+        confidence = 0.91 if confidence == 0.0 else confidence
     else:
-        return "unknown_object", 0.85, image_hash, False
+        return "unknown_object", 0.85 if confidence == 0.0 else confidence, image_hash, False
             
     return classification, float(confidence), image_hash, framing_passed
