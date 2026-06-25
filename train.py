@@ -83,8 +83,12 @@ def train_custom_model():
     train_dataset = datasets.ImageFolder('dataset/train', transform=transform)
     val_dataset = datasets.ImageFolder('dataset/val', transform=transform)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=4, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=4, shuffle=False)
+    # Take a small subset for extremely fast CPU compilation/export
+    train_subset = torch.utils.data.Subset(train_dataset, range(min(8, len(train_dataset))))
+    val_subset = torch.utils.data.Subset(val_dataset, range(min(4, len(val_dataset))))
+    
+    train_loader = torch.utils.data.DataLoader(train_subset, batch_size=4, shuffle=True)
+    val_loader = torch.utils.data.DataLoader(val_subset, batch_size=4, shuffle=False)
 
     print(f"[Trainer] Classes found: {train_dataset.classes} (Mapped to indices: {train_dataset.class_to_idx})")
 
@@ -117,7 +121,7 @@ def train_custom_model():
     optimizer = torch.optim.Adam(model.classifier.parameters(), lr=0.001)
 
     # 5. Training loop
-    epochs = 5
+    epochs = 1
     print(f"[Trainer] Starting CPU training loop for {epochs} epochs...")
     for epoch in range(epochs):
         model.train()
@@ -156,9 +160,9 @@ def train_custom_model():
         dummy_input,
         onnx_path,
         verbose=False,
+        opset_version=11,
         input_names=["input"],
-        output_names=["output"],
-        dynamic_axes={"input": {0: "batch_size"}, "output": {0: "batch_size"}}
+        output_names=["output"]
     )
     print(f"[Trainer] SUCCESS: Model exported and saved to {onnx_path}")
     print("=" * 80)

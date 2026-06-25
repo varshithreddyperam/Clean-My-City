@@ -278,7 +278,7 @@ class UrbanSimulator:
                 if tx.classification == "invalid_disposal":
                     tx.status_reason = "Human presence detected. Not a valid waste item."
                 elif tx.classification == "unknown_object":
-                    tx.status_reason = "Unrecognized item. For the mock AI prototype, please rename your file to contain a waste keyword (e.g. 'bottle.jpg', 'trash_bin.jpg', 'litter_street.jpg')."
+                    tx.status_reason = "Unrecognized item. For the mock AI prototype, please rename your file to contain a waste keyword (e.g. 'bottle.jpg', 'trash_bin.jpg')."
                 else:
                     tx.status_reason = "Verification failed."
                 tx.reward_points = 0
