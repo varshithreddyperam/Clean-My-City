@@ -214,8 +214,8 @@ async def submit_disposal(
         print(f"[Main] Save upload error: {e}")
         image_url = None
 
-    # Check duplicates check (Anti-spoofing)
-    is_dup = await check_duplicate(img_hash, 60)
+    # Check duplicates check (Disabled)
+    is_dup = False
     if is_dup:
         now_ms = int(time.time() * 1000)
 

@@ -81,19 +81,13 @@ class UrbanSimulator:
         classification = "recyclable"
         is_spoof = False
 
-        if roll > 0.95:
-            is_spoof = True
-        elif roll > 0.60:
+        if roll > 0.60:
             classification = "non-recyclable"
 
         image_hash = f"hash_{random.randint(100000, 999999)}"
-        if is_spoof:
-            image_hash = "spoof_dup_hash_9999"
 
         # Determine simulated image_url based on category
-        if is_spoof:
-            image_url = "/assets/recycle_box.png"
-        elif classification == "recyclable":
+        if classification == "recyclable":
             image_url = "/assets/recycle_box.png"
         else:
             image_url = "/assets/clean_bin.png"
@@ -112,8 +106,8 @@ class UrbanSimulator:
             })
             return
 
-        # Check Cache Duplicate Spoof
-        is_dup = await check_duplicate(image_hash, 60)
+        # Check Cache Duplicate Spoof (Disabled)
+        is_dup = False
         if is_dup:
             tx_id = str(uuid.uuid4())
             now_ms = int(time.time() * 1000)

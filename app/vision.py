@@ -77,21 +77,8 @@ def run_opencv_preprocessing(image_bytes: bytes) -> Tuple[str, bool, float, bool
         if area_ratio > 0.04:
             framing_passed = True
 
-    # 4. Face Detection (Haar Cascades)
-    import os
-    cascade_path = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
+    # 4. Face Detection (Disabled)
     has_face = False
-    if os.path.exists(cascade_path):
-        try:
-            face_cascade = cv2.CascadeClassifier(cascade_path)
-            if not face_cascade.empty():
-                # Dynamically calculate minSize as 15% of the smallest image dimension
-                h_img, w_img = gray.shape[:2]
-                min_dim = max(int(min(h_img, w_img) * 0.15), 30)
-                faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(min_dim, min_dim))
-                has_face = len(faces) > 0
-        except Exception as e:
-            print(f"[Vision] Face detection error: {e}")
 
     return img_hash, framing_passed, edge_density, has_face
 

@@ -182,13 +182,6 @@
                       Ensure your waste item is centered and occupies a significant part of the photo.
                     </div>
                   </div>
-                  <div class="flex items-start gap-3">
-                    <i class="fa-solid fa-circle-xmark text-red-500 mt-0.5 text-sm"></i>
-                    <div>
-                      <span class="font-bold text-gray-800">Anti-Spoofing:</span> 
-                      Photos containing human faces, sketches, or duplicate hash signatures will be rejected.
-                    </div>
-                  </div>
                 </div>
 
                 <label class="text-xs font-bold text-gray-500 uppercase tracking-wider mt-2">Try Demo Photos:</label>
@@ -198,9 +191,6 @@
                   </button>
                   <button class="btn btn-preset justify-start p-3 rounded-lg text-left text-xs font-semibold flex items-center gap-3" id="btn-preset-bin" data-asset="clean_bin.png">
                     <i class="fa-solid fa-trash-can text-cyan-600"></i> Waste Container (Non-Recyclable)
-                  </button>
-                  <button class="btn btn-preset justify-start p-3 rounded-lg text-left text-xs font-semibold flex items-center gap-3" id="btn-preset-spoof" data-asset="spoof_duplicate">
-                    <i class="fa-solid fa-clone text-amber-500"></i> Test Duplicate Detection
                   </button>
                 </div>
               </div>
@@ -317,7 +307,7 @@
             <div class="map-legend flex gap-4 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
               <span class="legend-item flex items-center gap-1.5"><span class="dot green w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span> Recycle Pass</span>
               <span class="legend-item flex items-center gap-1.5"><span class="dot blue w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></span> Standard Pass</span>
-              <span class="legend-item flex items-center gap-1.5"><span class="dot orange w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]"></span> Spoof Block</span>
+
             </div>
           </div>
           <div class="city-map-container bg-black/40 border border-white/5 rounded-xl h-[360px] relative overflow-hidden">
