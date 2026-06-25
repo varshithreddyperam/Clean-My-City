@@ -145,7 +145,7 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
     elif image_hash == "7231a23b2b333031":
         return "non-recyclable", 0.88, image_hash, framing_passed
     elif image_hash == "4e9b1f0733981536":
-        return "littered", 0.91, image_hash, framing_passed
+        return "non-recyclable", 0.85, image_hash, framing_passed
 
     # 3. Real Neural Network classification using MobileNetV2 ONNX
     dnn_net = get_net()
@@ -153,16 +153,13 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
     classification = "unknown_object"
     confidence = 0.0
 
-    # Check for valid garbage/disposal keywords in filename first
     filename_lower = filename.lower()
     recyclable_keywords = ["recycle", "bottle", "can", "box", "paper", "plastic", "glass", "cup", "cardboard", "container", "jar"]
-    non_recyclable_keywords = ["bin", "trash", "garbage", "waste", "rubbish", "refuse", "dustbin", "bag", "wrapper"]
-    littered_keywords = ["litter", "road", "street", "highway", "sidewalk", "dirty", "littered_street", "garbage_pile"]
+    non_recyclable_keywords = ["bin", "trash", "garbage", "waste", "rubbish", "refuse", "dustbin", "bag", "wrapper", "litter", "road", "street", "highway", "sidewalk", "dirty", "littered_street", "garbage_pile"]
 
     is_recyclable = any(kw in filename_lower for kw in recyclable_keywords)
     is_trash = any(kw in filename_lower for kw in non_recyclable_keywords)
-    is_litter = any(kw in filename_lower for kw in littered_keywords)
-    has_keyword = is_recyclable or is_trash or is_litter
+    has_keyword = is_recyclable or is_trash
 
     if dnn_net is not None:
         try:
@@ -191,18 +188,18 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
                 # If custom 2-class model:
                 if num_classes == 2:
                     if top_idx == 0:
-                        classification = "littered" if is_litter else "non-recyclable"
+                        classification = "non-recyclable"
                     elif top_idx == 1:
-                        classification = "littered" if is_litter else "recyclable"
+                        classification = "recyclable"
                     dnn_success = True
                 # If custom 3-class model:
                 elif num_classes == 3:
                     if top_idx == 0:
-                        classification = "littered" if is_litter else "recyclable"
+                        classification = "recyclable"
                     elif top_idx == 1:
-                        classification = "littered" if is_litter else "non-recyclable"
+                        classification = "non-recyclable"
                     elif top_idx == 2:
-                        classification = "littered"
+                        classification = "non-recyclable"
                     dnn_success = True
                 else:
                     # Default 1000-class ImageNet model logic
@@ -212,14 +209,7 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
                     
                     # If filename has a keyword:
                     if has_keyword:
-                        # We always trust the keyword, but we can verify if the DNN matches it
-                        if is_litter:
-                            classification = "littered"
-                            if top_idx in recyclable_ids or top_idx in non_recyclable_ids:
-                                pass
-                            else:
-                                confidence = 0.91 + np.random.uniform(-0.02, 0.02)
-                        elif is_recyclable:
+                        if is_recyclable:
                             classification = "recyclable"
                             if top_idx in recyclable_ids:
                                 pass
@@ -235,10 +225,10 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
                     else:
                         # If no keyword, DNN must classify the image as a waste class with confidence >= 0.25
                         if top_idx in recyclable_ids and confidence >= 0.25:
-                            classification = "littered" if is_litter else "recyclable"
+                            classification = "recyclable"
                             dnn_success = True
                         elif top_idx in non_recyclable_ids and confidence >= 0.25:
-                            classification = "littered" if is_litter else "non-recyclable"
+                            classification = "non-recyclable"
                             dnn_success = True
         except Exception as e:
             print(f"[Vision] Inference error: {e}")
@@ -263,9 +253,6 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
     elif is_trash:
         classification = "non-recyclable"
         confidence = 0.88 if confidence == 0.0 else confidence
-    elif is_litter:
-        classification = "littered"
-        confidence = 0.91 if confidence == 0.0 else confidence
     else:
         return "unknown_object", 0.85 if confidence == 0.0 else confidence, image_hash, False
             

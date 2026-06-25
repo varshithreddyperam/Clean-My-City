@@ -28,8 +28,8 @@ async function initApp() {
   setupEventStream();
   setupDetailsModal();
 
-  // Load default preset
-  loadPresetAsset('recycle_box.png');
+  // App starts in empty drag/drop upload state
+  // loadPresetAsset('recycle_box.png');
 }
 
 // 1. Navigation tabs
@@ -137,7 +137,7 @@ async function updateUserProfile(username) {
     const allBadges = [
       { name: "Green Novice", icon: "fa-user-astronaut", desc: "Joined Grid" },
       { name: "Sort Master", icon: "fa-recycle", desc: "First Recyclable" },
-      { name: "Litter Buster", icon: "fa-trash-can", desc: "Cleaned Litter" },
+      { name: "Waste Buster", icon: "fa-trash-can", desc: "3 Valid Disposals" },
       { name: "Eco Legend", icon: "fa-crown", desc: "Eco Guardian Lvl 4" }
     ];
 
@@ -362,9 +362,9 @@ function mockClientVisionPipeline(imgView, filename) {
     labelEl.style.color = '#3b82f6';
     confEl.innerText = '88%';
   } else {
-    labelEl.innerText = 'Litter Alert (Outside bin)';
-    labelEl.style.color = '#ef4444';
-    confEl.innerText = '91%';
+    labelEl.innerText = 'Waste Item';
+    labelEl.style.color = '#3b82f6';
+    confEl.innerText = '--%';
   }
   alignEl.innerText = 'Aligned & Framed (PASS)';
   alignEl.style.color = '#10b981';
@@ -519,19 +519,25 @@ function setupEventStream() {
 
   eventSource.onerror = (e) => {
     console.warn("SSE disconnected. Reconnect sweep active.");
-    document.querySelector('.system-status-indicator').innerHTML = `
-      <span class="status-dot red"></span>
-      <span class="status-label">FastAPI API Core Offline</span>
-    `;
-    document.querySelector('.system-status-indicator').className = "system-status-indicator flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-full text-xs text-red-500 font-semibold tracking-wider font-display";
+    const indicator = document.querySelector('.system-status-indicator');
+    if (indicator) {
+      indicator.innerHTML = `
+        <span class="status-dot red"></span>
+        <span class="status-label">FastAPI API Core Offline</span>
+      `;
+      indicator.className = "system-status-indicator flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-full text-xs text-red-500 font-semibold tracking-wider font-display";
+    }
   };
   
   eventSource.onopen = () => {
-    document.querySelector('.system-status-indicator').innerHTML = `
-      <span class="status-dot green"></span>
-      <span class="status-label">FastAPI API Core Live</span>
-    `;
-    document.querySelector('.system-status-indicator').className = "system-status-indicator flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs text-ecoaccent font-semibold tracking-wider font-display";
+    const indicator = document.querySelector('.system-status-indicator');
+    if (indicator) {
+      indicator.innerHTML = `
+        <span class="status-dot green"></span>
+        <span class="status-label">FastAPI API Core Live</span>
+      `;
+      indicator.className = "system-status-indicator flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs text-ecoaccent font-semibold tracking-wider font-display";
+    }
   };
 }
 
@@ -663,13 +669,19 @@ function handleIncomingGridEvent(event) {
         alignEl.innerText = 'Aligned & Framed (PASS)';
         alignEl.style.color = '#10b981';
       } else {
-        updateFeedbackBanner('failed', 'Disposal Rejected', tx.statusReason || 'Littering detected. Points withheld.');
+        updateFeedbackBanner('failed', 'Disposal Rejected', tx.statusReason || 'Validation failed. Points withheld.');
         
         // Set to fail tags
-        labelEl.innerText = 'Litter Alert (Outside bin)';
+        if (tx.classification === 'invalid_disposal') {
+          labelEl.innerText = 'Human / Face Present';
+        } else if (tx.classification === 'unknown_object') {
+          labelEl.innerText = 'Unknown Object';
+        } else {
+          labelEl.innerText = 'Rejected Disposal';
+        }
         labelEl.style.color = '#ef4444';
-        confEl.innerText = '91%';
-        alignEl.innerText = 'Outside Receptacle (FAIL)';
+        confEl.innerText = '0%';
+        alignEl.innerText = 'Outside Receptacle / Face Detected (FAIL)';
         alignEl.style.color = '#ef4444';
       }
       updateUserProfile(activeUser);
@@ -694,7 +706,6 @@ function handleIncomingGridEvent(event) {
     let color = '#00f2fe';
     if (event.classification === 'recyclable') color = '#10b981';
     else if (event.classification === 'non-recyclable') color = '#3b82f6';
-    else if (event.classification === 'littered') color = '#ef4444';
     
     if (event.type === 'rejected_instant' || (event.transaction && event.transaction.status === 'Spoof Rejected')) {
       color = '#f59e0b';
@@ -723,7 +734,6 @@ function injectLogEntry(tx, append = false) {
 
   let classificationClass = 'recyclable';
   if (tx.classification === 'non-recyclable') classificationClass = 'non-recyclable';
-  else if (tx.classification === 'littered') classificationClass = 'littered';
   
   let statusClass = 'pending';
   let statusText = 'Pending';
@@ -743,7 +753,7 @@ function injectLogEntry(tx, append = false) {
   row.innerHTML = `
     <span class="log-time text-gray-500 font-display">${timeStr}</span>
     <span class="log-user text-white truncate pr-2" title="${tx.username}">${tx.username}</span>
-    <span class="log-class ${classificationClass} font-semibold uppercase text-[10px]">${tx.classification === 'littered' ? 'litter' : tx.classification}</span>
+    <span class="log-class ${classificationClass} font-semibold uppercase text-[10px]">${tx.classification}</span>
     <span class="log-status-badge ${statusClass}">${statusText}</span>
   `;
 
@@ -934,7 +944,17 @@ function showTransactionDetailsModal(tx) {
   document.getElementById('modal-tx-id').innerText = `id: ${tx.id}`;
   document.getElementById('modal-username').innerText = tx.username;
   document.getElementById('modal-reward').innerText = `+${tx.rewardPoints || tx.reward_points || 0} XP`;
-  document.getElementById('modal-class').innerText = tx.classification === 'littered' ? 'Littered Alert' : (tx.classification === 'recyclable' ? 'Recyclable Container' : 'Non-Recyclable Waste');
+  let categoryLabel = 'Unknown Object';
+  if (tx.classification === 'recyclable') {
+    categoryLabel = 'Recyclable Container';
+  } else if (tx.classification === 'non-recyclable') {
+    categoryLabel = 'Non-Recyclable Waste';
+  } else if (tx.classification === 'invalid_disposal') {
+    categoryLabel = 'Invalid Disposal (Face Detected)';
+  } else if (tx.classification === 'littered') {
+    categoryLabel = 'Littered Alert';
+  }
+  document.getElementById('modal-class').innerText = categoryLabel;
   
   const statusEl = document.getElementById('modal-status');
   statusEl.innerText = tx.status;

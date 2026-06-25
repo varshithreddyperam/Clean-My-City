@@ -76,16 +76,14 @@ class UrbanSimulator:
         }
 
         # Submissions roll logic
-        # 55% Recyclable, 30% Non-recyclable, 10% Littered, 5% Spoof (duplicate)
+        # 60% Recyclable, 35% Non-recyclable, 5% Spoof (duplicate)
         roll = random.random()
         classification = "recyclable"
         is_spoof = False
 
         if roll > 0.95:
             is_spoof = True
-        elif roll > 0.85:
-            classification = "littered"
-        elif roll > 0.55:
+        elif roll > 0.60:
             classification = "non-recyclable"
 
         image_hash = f"hash_{random.randint(100000, 999999)}"
@@ -97,10 +95,8 @@ class UrbanSimulator:
             image_url = "/assets/recycle_box.png"
         elif classification == "recyclable":
             image_url = "/assets/recycle_box.png"
-        elif classification == "non-recyclable":
-            image_url = "/assets/clean_bin.png"
         else:
-            image_url = "/assets/litter_road.png"
+            image_url = "/assets/clean_bin.png"
 
         # Check Cache Rate-limiting
         is_allowed, sec_left = await check_cooldown(random_user, 15)
@@ -220,7 +216,7 @@ class UrbanSimulator:
             })
 
             # Simulate pipeline completion after 1.5 seconds
-            asyncio.create_task(self.finalize_verification(tx_id, classification != "littered"))
+            asyncio.create_task(self.finalize_verification(tx_id, classification not in ["invalid_disposal", "unknown_object"]))
 
     async def finalize_verification(self, tx_id: str, approve: bool):
         await asyncio.sleep(1.5)
@@ -238,7 +234,7 @@ class UrbanSimulator:
             if not user:
                 return
 
-            if approve and tx.classification != "littered" and tx.classification != "invalid_disposal" and tx.classification != "unknown_object":
+            if approve and tx.classification != "invalid_disposal" and tx.classification != "unknown_object":
                 tx.status = "Points Awarded"
                 user.points += tx.reward_points
                 
@@ -259,8 +255,8 @@ class UrbanSimulator:
                 if "Sort Master" not in badges and tx.classification == "recyclable":
                     badges.append("Sort Master")
                 
-                # Check litter buster
-                if "Litter Buster" not in badges:
+                # Check waste buster
+                if "Waste Buster" not in badges:
                     # Count successful cleans
                     cnt_q = await session.execute(
                         select(Transaction).filter(
@@ -270,7 +266,7 @@ class UrbanSimulator:
                     )
                     clean_cnt = len(cnt_q.scalars().all())
                     if clean_cnt >= 3:
-                        badges.append("Litter Buster")
+                        badges.append("Waste Buster")
                 
                 # Check eco legend
                 if "Eco Legend" not in badges and user.level >= 4:
@@ -283,8 +279,6 @@ class UrbanSimulator:
                     tx.status_reason = "Human presence detected. Not a valid waste item."
                 elif tx.classification == "unknown_object":
                     tx.status_reason = "Unrecognized item. For the mock AI prototype, please rename your file to contain a waste keyword (e.g. 'bottle.jpg', 'trash_bin.jpg', 'litter_street.jpg')."
-                elif tx.classification == "littered":
-                    tx.status_reason = "Littering detected: Trash not properly placed inside container."
                 else:
                     tx.status_reason = "Verification failed."
                 tx.reward_points = 0
