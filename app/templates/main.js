@@ -348,29 +348,19 @@ function mockClientVisionPipeline(imgView, filename) {
   document.getElementById('ph-edges').classList.add('hidden');
   document.getElementById('ph-contours').classList.add('hidden');
 
-  // Pre-fill labels
+  // Show analysis pending labels (actual classification comes from backend)
   const labelEl = document.getElementById('ai-detected-category');
   const confEl = document.getElementById('ai-confidence');
   const alignEl = document.getElementById('ai-edge-verdict');
 
-  if (filename.includes('recycle')) {
-    labelEl.innerText = 'Recyclable Container';
-    labelEl.style.color = '#00f2fe';
-    confEl.innerText = '94%';
-  } else if (filename.includes('bin')) {
-    labelEl.innerText = 'Non-Recyclable Waste';
-    labelEl.style.color = '#3b82f6';
-    confEl.innerText = '88%';
-  } else {
-    labelEl.innerText = 'Waste Item';
-    labelEl.style.color = '#3b82f6';
-    confEl.innerText = '--%';
-  }
+  labelEl.innerText = 'Analyzing...';
+  labelEl.style.color = '#5d4037';
+  confEl.innerText = '--%';
   alignEl.innerText = 'Aligned & Framed (PASS)';
   alignEl.style.color = '#10b981';
 
   document.getElementById('btn-submit-disposal').disabled = false;
-  updateFeedbackBanner('idle', 'Vision Pipeline Complete', 'OpenCV preprocessing completed. Ready to submit to secure FastAPI backend.');
+  updateFeedbackBanner('idle', 'Preprocessing Complete', 'OpenCV analysis done. Ready to submit for AI model classification.');
 }
 
 function updateFeedbackBanner(status, title, description) {
@@ -418,7 +408,7 @@ async function submitDisposalPayload() {
   // Run the visual OpenCV edge Contours preprocessing pipeline ONLY on click Submit!
   mockClientVisionPipeline(imgView, filename);
 
-  updateFeedbackBanner('pending', 'FastAPI Transmitting...', 'Verifying Firebase Auth credentials and Redis locks...');
+  updateFeedbackBanner('pending', 'Processing...', 'Running image through MobileNetV2 AI model for classification...');
 
   const formData = new FormData();
   
@@ -469,7 +459,7 @@ async function submitDisposalPayload() {
 
   } catch (error) {
     console.error("Disposal upload error:", error);
-    updateFeedbackBanner('failed', 'API Node Offline', 'Could not establish connection to Python FastAPI backend.');
+    updateFeedbackBanner('failed', 'Server Offline', 'Could not connect to the backend server. Make sure it is running.');
     btnSubmit.disabled = false;
   }
 }
@@ -523,7 +513,7 @@ function setupEventStream() {
     if (indicator) {
       indicator.innerHTML = `
         <span class="status-dot red"></span>
-        <span class="status-label">FastAPI API Core Offline</span>
+        <span class="status-label">Server Offline</span>
       `;
       indicator.className = "system-status-indicator flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-full text-xs text-red-500 font-semibold tracking-wider font-display";
     }
@@ -534,7 +524,7 @@ function setupEventStream() {
     if (indicator) {
       indicator.innerHTML = `
         <span class="status-dot green"></span>
-        <span class="status-label">FastAPI API Core Live</span>
+        <span class="status-label">AI Server Online</span>
       `;
       indicator.className = "system-status-indicator flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs text-ecoaccent font-semibold tracking-wider font-display";
     }

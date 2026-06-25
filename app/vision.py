@@ -114,56 +114,23 @@ def get_net():
 
 async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, float, str, bool]:
     """
-    Simulates a TensorFlow image classification model.
-    Runs OpenCV preprocessing on the image, calculates perceptual dhash,
-    and returns: (classification, confidence, image_hash, framing_passed).
+    Classifies a waste disposal image using the trained MobileNetV2 ONNX model.
+    Runs OpenCV preprocessing on the image, then performs neural network inference.
+    Returns: (classification, confidence, image_hash, framing_passed).
+    
+    Non-waste images are rejected based on low model confidence, NOT filename keywords.
     """
     # Perform OpenCV preprocessing
     image_hash, framing_passed, edge_density, has_face = run_opencv_preprocessing(image_bytes)
-    
-    # 1. Non-waste filename filtering (reject non-wastage immediately)
-    filename_lower = filename.lower()
-    
-    non_garbage_keywords = [
-        "friend", "person", "human", "face", "selfie", "book", "laptop", "computer", 
-        "mouse", "keyboard", "chair", "table", "desk", "phone", "mobile", "car", 
-        "bike", "dog", "cat", "animal", "plant", "tree", "flower", "room", "wall", 
-        "house", "building", "interior", "sofa", "furniture", "monitor"
-    ]
-    if any(kw in filename_lower for kw in non_garbage_keywords):
-        return "unknown_object", 0.95, image_hash, False
 
-    recyclable_keywords = ["recycle", "bottle", "can", "box", "paper", "plastic", "glass", "cup", "cardboard", "container", "jar"]
-    non_recyclable_keywords = ["bin", "trash", "garbage", "waste", "rubbish", "refuse", "dustbin", "bag", "wrapper", "litter", "road", "street", "highway", "sidewalk", "dirty", "littered_street", "garbage_pile"]
-
-    is_recyclable = any(kw in filename_lower for kw in recyclable_keywords)
-    is_trash = any(kw in filename_lower for kw in non_recyclable_keywords)
-    has_keyword = is_recyclable or is_trash
-
-    # If it is not a waste item (no waste keywords in the filename), reject it immediately
-    if not has_keyword:
-        return "unknown_object", 0.85, image_hash, False
-
-    # 2. Human presence check (fallback)
+    # 1. Human presence check
     if has_face:
         return "invalid_disposal", 0.99, image_hash, False
 
-    # 2. Preset signature check based on exact original dhashes
-    # This guarantees the test assets and simulator presets work perfectly
-    if image_hash == "60d2c2ecccc2b4f0":
-        return "recyclable", 0.94, image_hash, framing_passed
-    elif image_hash == "7231a23b2b333031":
-        return "non-recyclable", 0.88, image_hash, framing_passed
-    elif image_hash == "4e9b1f0733981536":
-        return "non-recyclable", 0.85, image_hash, framing_passed
-
-    # 3. Real Neural Network classification using MobileNetV2 ONNX
+    # 2. Run Neural Network classification using MobileNetV2 ONNX model
     dnn_net = get_net()
-    dnn_success = False
     classification = "unknown_object"
     confidence = 0.0
-
-
 
     if dnn_net is not None:
         try:
@@ -189,75 +156,54 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
                 
                 num_classes = preds.shape[1]
                 
-                # If custom 2-class model:
+                # Custom 2-class model (trained via train.py):
+                #   Class 0 = non-recyclable, Class 1 = recyclable
                 if num_classes == 2:
+                    if confidence < 0.55:
+                        # Low confidence — model is unsure, likely not a waste item
+                        return "unknown_object", confidence, image_hash, False
                     if top_idx == 0:
                         classification = "non-recyclable"
-                    elif top_idx == 1:
+                    else:
                         classification = "recyclable"
-                    dnn_success = True
-                # If custom 3-class model:
+                
+                # Custom 3-class model:
                 elif num_classes == 3:
+                    if confidence < 0.45:
+                        return "unknown_object", confidence, image_hash, False
                     if top_idx == 0:
                         classification = "recyclable"
                     elif top_idx == 1:
                         classification = "non-recyclable"
-                    elif top_idx == 2:
+                    else:
                         classification = "non-recyclable"
-                    dnn_success = True
+                
                 else:
-                    # Default 1000-class ImageNet model logic
-                    # Define waste classes (extended for robustness)
+                    # Default 1000-class ImageNet model (pretrained, not fine-tuned)
+                    # Map known ImageNet waste-related class IDs
                     recyclable_ids = {440, 737, 898, 907, 478, 519, 653, 724, 897}
                     non_recyclable_ids = {412, 728, 463, 968, 636, 700, 504, 811, 923}
                     
-                    # If filename has a keyword:
-                    if has_keyword:
-                        if is_recyclable:
-                            classification = "recyclable"
-                            if top_idx in recyclable_ids:
-                                pass
-                            else:
-                                confidence = 0.94 + np.random.uniform(-0.02, 0.02)
-                        elif is_trash:
-                            classification = "non-recyclable"
-                            if top_idx in non_recyclable_ids:
-                                pass
-                            else:
-                                confidence = 0.88 + np.random.uniform(-0.02, 0.02)
-                        dnn_success = True
+                    if top_idx in recyclable_ids and confidence >= 0.20:
+                        classification = "recyclable"
+                    elif top_idx in non_recyclable_ids and confidence >= 0.20:
+                        classification = "non-recyclable"
                     else:
-                        # If no keyword, DNN must classify the image as a waste class with confidence >= 0.25
-                        if top_idx in recyclable_ids and confidence >= 0.25:
-                            classification = "recyclable"
-                            dnn_success = True
-                        elif top_idx in non_recyclable_ids and confidence >= 0.25:
-                            classification = "non-recyclable"
-                            dnn_success = True
+                        # Not recognized as any waste class
+                        return "unknown_object", confidence, image_hash, False
+
+                return classification, confidence, image_hash, framing_passed
         except Exception as e:
             print(f"[Vision] Inference error: {e}")
 
-    if dnn_success:
-        return classification, confidence, image_hash, framing_passed
-
-    # 4. Fallback mock keyword classification (if DNN failed/offline or low confidence without keywords)
-    # Check for non-garbage keywords explicitly
-    non_garbage_keywords = [
-        "friend", "person", "human", "face", "selfie", "book", "laptop", "computer", 
-        "mouse", "keyboard", "chair", "table", "desk", "phone", "mobile", "car", 
-        "bike", "dog", "cat", "animal", "plant", "tree", "flower", "room", "wall", 
-        "house", "building", "interior", "sofa", "furniture", "monitor"
-    ]
-    if any(kw in filename_lower for kw in non_garbage_keywords):
-        return "unknown_object", 0.95 if confidence == 0.0 else confidence, image_hash, False
-
-    if is_recyclable:
-        classification = "recyclable"
-        confidence = 0.94 if confidence == 0.0 else confidence
-    elif is_trash:
+    # 3. Fallback: if model failed to load or inference crashed
+    # Use edge density as a basic heuristic — waste images tend to have moderate edge density
+    if edge_density > 0.03:
+        # Some structure detected; classify conservatively
         classification = "non-recyclable"
-        confidence = 0.88 if confidence == 0.0 else confidence
+        confidence = 0.60
     else:
-        return "unknown_object", 0.85 if confidence == 0.0 else confidence, image_hash, False
-            
+        classification = "unknown_object"
+        confidence = 0.40
+
     return classification, float(confidence), image_hash, framing_passed
