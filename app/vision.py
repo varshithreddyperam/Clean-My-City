@@ -121,7 +121,30 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
     # Perform OpenCV preprocessing
     image_hash, framing_passed, edge_density, has_face = run_opencv_preprocessing(image_bytes)
     
-    # 1. Human presence check
+    # 1. Non-waste filename filtering (reject non-wastage immediately)
+    filename_lower = filename.lower()
+    
+    non_garbage_keywords = [
+        "friend", "person", "human", "face", "selfie", "book", "laptop", "computer", 
+        "mouse", "keyboard", "chair", "table", "desk", "phone", "mobile", "car", 
+        "bike", "dog", "cat", "animal", "plant", "tree", "flower", "room", "wall", 
+        "house", "building", "interior", "sofa", "furniture", "monitor"
+    ]
+    if any(kw in filename_lower for kw in non_garbage_keywords):
+        return "unknown_object", 0.95, image_hash, False
+
+    recyclable_keywords = ["recycle", "bottle", "can", "box", "paper", "plastic", "glass", "cup", "cardboard", "container", "jar"]
+    non_recyclable_keywords = ["bin", "trash", "garbage", "waste", "rubbish", "refuse", "dustbin", "bag", "wrapper", "litter", "road", "street", "highway", "sidewalk", "dirty", "littered_street", "garbage_pile"]
+
+    is_recyclable = any(kw in filename_lower for kw in recyclable_keywords)
+    is_trash = any(kw in filename_lower for kw in non_recyclable_keywords)
+    has_keyword = is_recyclable or is_trash
+
+    # If it is not a waste item (no waste keywords in the filename), reject it immediately
+    if not has_keyword:
+        return "unknown_object", 0.85, image_hash, False
+
+    # 2. Human presence check (fallback)
     if has_face:
         return "invalid_disposal", 0.99, image_hash, False
 
@@ -140,13 +163,7 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
     classification = "unknown_object"
     confidence = 0.0
 
-    filename_lower = filename.lower()
-    recyclable_keywords = ["recycle", "bottle", "can", "box", "paper", "plastic", "glass", "cup", "cardboard", "container", "jar"]
-    non_recyclable_keywords = ["bin", "trash", "garbage", "waste", "rubbish", "refuse", "dustbin", "bag", "wrapper", "litter", "road", "street", "highway", "sidewalk", "dirty", "littered_street", "garbage_pile"]
 
-    is_recyclable = any(kw in filename_lower for kw in recyclable_keywords)
-    is_trash = any(kw in filename_lower for kw in non_recyclable_keywords)
-    has_keyword = is_recyclable or is_trash
 
     if dnn_net is not None:
         try:
