@@ -25,7 +25,7 @@ def generate_mock_dataset():
     so the script can run and export immediately without requiring manual image downloads.
     """
     for folder in ['train', 'val']:
-        for cls in ['recyclable', 'non-recyclable', 'littered']:
+        for cls in ['recyclable', 'non-recyclable']:
             os.makedirs(f'dataset/{folder}/{cls}', exist_ok=True)
 
     from PIL import Image
@@ -34,7 +34,7 @@ def generate_mock_dataset():
     print("[Trainer] Checking dataset folders...")
     needs_generation = False
     for folder in ['train', 'val']:
-        for cls in ['recyclable', 'non-recyclable', 'littered']:
+        for cls in ['recyclable', 'non-recyclable']:
             if len(os.listdir(f'dataset/{folder}/{cls}')) < 3:
                 needs_generation = True
 
@@ -44,7 +44,7 @@ def generate_mock_dataset():
 
     print("[Trainer] Generating synthetic mock dataset to make script runnable...")
     for folder in ['train', 'val']:
-        for cls in ['recyclable', 'non-recyclable', 'littered']:
+        for cls in ['recyclable', 'non-recyclable']:
             num_imgs = 10 if folder == 'train' else 3
             for idx in range(num_imgs):
                 # Create a black background canvas
@@ -57,12 +57,6 @@ def generate_mock_dataset():
                 elif cls == 'non-recyclable':
                     # Non-recyclable has green filled rectangles (representing waste bins)
                     cv2.rectangle(img_arr, (40, 40), (180, 180), (100, 255, 50), -1)
-                else:
-                    # Littered has red lines/noise (representing street garbage)
-                    for _ in range(8):
-                        pt1 = (random.randint(10, 210), random.randint(10, 210))
-                        pt2 = (random.randint(10, 210), random.randint(10, 210))
-                        cv2.line(img_arr, pt1, pt2, (50, 50, 255), random.randint(3, 10))
                 
                 # Add random noise to simulate real-world variance
                 noise = np.random.normal(0, 15, img_arr.shape).astype(np.int16)
@@ -108,8 +102,8 @@ def train_custom_model():
     for param in model.parameters():
         param.requires_grad = False
 
-    # Replace classifier head for 3 classes
-    model.classifier[1] = torch.nn.Linear(model.last_channel, 3)
+    # Replace classifier head for 2 classes
+    model.classifier[1] = torch.nn.Linear(model.last_channel, 2)
     
     # Ensure classifier weights are trainable
     for param in model.classifier.parameters():
@@ -169,7 +163,7 @@ def train_custom_model():
     print(f"[Trainer] SUCCESS: Model exported and saved to {onnx_path}")
     print("=" * 80)
     print("You can now restart your FastAPI backend server. The app will automatically")
-    print("detect the new 3-class model layout and use it to classify uploads!")
+    print("detect the new 2-class model layout and use it to classify uploads!")
     print("=" * 80)
 
 if __name__ == "__main__":

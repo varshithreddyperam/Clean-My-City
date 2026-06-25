@@ -188,8 +188,15 @@ async def classify_disposal(image_bytes: bytes, filename: str) -> Tuple[str, flo
                 
                 num_classes = preds.shape[1]
                 
+                # If custom 2-class model:
+                if num_classes == 2:
+                    if top_idx == 0:
+                        classification = "littered" if is_litter else "non-recyclable"
+                    elif top_idx == 1:
+                        classification = "littered" if is_litter else "recyclable"
+                    dnn_success = True
                 # If custom 3-class model:
-                if num_classes == 3:
+                elif num_classes == 3:
                     if top_idx == 0:
                         classification = "littered" if is_litter else "recyclable"
                     elif top_idx == 1:
