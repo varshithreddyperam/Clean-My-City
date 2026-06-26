@@ -773,8 +773,8 @@ function initMap() {
     attributionControl: false
   }).setView([cityCenter.lat, cityCenter.lng], 13);
 
-  // Add CartoDB Dark Matter tiles
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  // Add CartoDB Voyager (Light) tiles
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 19
   }).addTo(mapInstance);
 
