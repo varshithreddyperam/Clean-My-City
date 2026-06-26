@@ -119,11 +119,33 @@ function showLoggedOutState() {
   if (adminView) adminView.style.display = 'none';
 }
 
+function resetNavigationToDefault() {
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabBtns.forEach(btn => {
+    if (btn.getAttribute('data-tab') === 'citizen-view') {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  tabContents.forEach(content => {
+    if (content.id === 'citizen-view') {
+      content.classList.add('active-content');
+    } else {
+      content.classList.remove('active-content');
+    }
+  });
+}
+
 async function loginMockUser(username) {
   const token = `mock_token_${username}`;
   localStorage.setItem('cmc_auth_token', token);
   localStorage.setItem('cmc_username', username);
   
+  resetNavigationToDefault();
   await updateUserProfile(username);
   showLoggedInState();
 }
@@ -131,6 +153,7 @@ async function loginMockUser(username) {
 function logoutUser() {
   localStorage.removeItem('cmc_auth_token');
   localStorage.removeItem('cmc_username');
+  resetNavigationToDefault();
   
   const userDisplayName = document.getElementById('user-display-name');
   if (userDisplayName) userDisplayName.innerText = 'Guest';
