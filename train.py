@@ -19,6 +19,59 @@ except ModuleNotFoundError:
 
 from torchvision import datasets, transforms, models
 
+def fix_onnx_conv_kernel_shape(onnx_path):
+    """
+    Patches the exported ONNX model by adding the missing 'kernel_shape' attribute
+    to any Conv layers, making it fully compatible with OpenCV's DNN parser under PyTorch 2.x.
+    """
+    model = onnx.load(onnx_path)
+    graph = model.graph
+    
+    initializer_shapes = {}
+    for init in graph.initializer:
+        initializer_shapes[init.name] = list(init.dims)
+        
+    for inp in graph.input:
+        try:
+            name = inp.name
+            dims = [dim.dim_value for dim in inp.type.tensor_type.shape.dim]
+            initializer_shapes[name] = dims
+        except Exception:
+            pass
+            
+    modified = False
+    for node in graph.node:
+        if node.op_type == "Conv":
+            has_kernel_shape = False
+            for attr in node.attribute:
+                if attr.name == "kernel_shape":
+                    has_kernel_shape = True
+                    break
+                    
+            if not has_kernel_shape:
+                if len(node.input) >= 2:
+                    weight_name = node.input[1]
+                    if weight_name in initializer_shapes:
+                        shape = initializer_shapes[weight_name]
+                        if len(shape) >= 4:
+                            kernel_shape = shape[-2:]
+                            print(f"[ONNX Patch] Node {node.name or node.output[0]}: Adding missing kernel_shape {kernel_shape} based on weight shape {shape}")
+                            new_attr = onnx.helper.make_attribute("kernel_shape", kernel_shape)
+                            node.attribute.append(new_attr)
+                            modified = True
+                        else:
+                            print(f"[ONNX Patch] Warning: weight shape {shape} too short for Conv node {node.name or node.output[0]}")
+                    else:
+                        print(f"[ONNX Patch] Warning: weight tensor '{weight_name}' shape not found for Conv node {node.name or node.output[0]}")
+                else:
+                    print(f"[ONNX Patch] Warning: Conv node {node.name or node.output[0]} has less than 2 inputs")
+
+    if modified:
+        onnx.save(model, onnx_path)
+        print(f"[ONNX Patch] SUCCESS: Model patched and saved to {onnx_path}")
+    else:
+        print("[ONNX Patch] No missing kernel_shape attributes found.")
+
 def generate_mock_dataset():
     """
     Generates a synthetic mock dataset (recyclable, non-recyclable, littered) 
@@ -83,12 +136,8 @@ def train_custom_model():
     train_dataset = datasets.ImageFolder('dataset/train', transform=transform)
     val_dataset = datasets.ImageFolder('dataset/val', transform=transform)
 
-    # Take a small subset for extremely fast CPU compilation/export
-    train_subset = torch.utils.data.Subset(train_dataset, range(min(8, len(train_dataset))))
-    val_subset = torch.utils.data.Subset(val_dataset, range(min(4, len(val_dataset))))
-    
-    train_loader = torch.utils.data.DataLoader(train_subset, batch_size=4, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val_subset, batch_size=4, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     print(f"[Trainer] Classes found: {train_dataset.classes} (Mapped to indices: {train_dataset.class_to_idx})")
 
@@ -121,7 +170,7 @@ def train_custom_model():
     optimizer = torch.optim.Adam(model.classifier.parameters(), lr=0.001)
 
     # 5. Training loop
-    epochs = 1
+    epochs = 5
     print(f"[Trainer] Starting CPU training loop for {epochs} epochs...")
     for epoch in range(epochs):
         model.train()
@@ -164,7 +213,11 @@ def train_custom_model():
         input_names=["input"],
         output_names=["output"]
     )
-    print(f"[Trainer] SUCCESS: Model exported and saved to {onnx_path}")
+    print(f"[Trainer] SUCCESS: Model exported. Applying OpenCV compatibility patch...")
+    try:
+        fix_onnx_conv_kernel_shape(onnx_path)
+    except Exception as e:
+        print(f"[Trainer] ERROR applying patch: {e}")
     print("=" * 80)
     print("You can now restart your FastAPI backend server. The app will automatically")
     print("detect the new 2-class model layout and use it to classify uploads!")
