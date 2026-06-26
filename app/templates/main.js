@@ -55,52 +55,105 @@ function setupNavigation() {
 
 // 2. Authentication Gateway
 function setupAuth() {
-  const btnLogin = document.getElementById('btn-auth-mock-login');
+  const btnLoginSubmit = document.getElementById('btn-login-submit');
   const btnLogout = document.getElementById('btn-auth-logout');
-  const usernameInput = document.getElementById('auth-username-input');
-  const tokenLabel = document.getElementById('auth-token-status');
+  const loginUsernameInput = document.getElementById('login-username-input');
 
   // Load saved credentials
   const savedToken = localStorage.getItem('cmc_auth_token');
   const savedUser = localStorage.getItem('cmc_username');
   
   if (savedToken && savedUser) {
-    usernameInput.value = savedUser;
-    tokenLabel.innerText = savedToken;
-    updateUserProfile(savedUser);
+    if (loginUsernameInput) {
+      loginUsernameInput.value = savedUser;
+    }
+    loginMockUser(savedUser);
   } else {
-    // Default guest session
-    loginMockUser("citizen_zero");
+    showLoggedOutState();
   }
 
-  btnLogin.addEventListener('click', () => {
-    const user = usernameInput.value.trim().toLowerCase();
-    if (user) {
-      loginMockUser(user);
-    }
-  });
+  if (btnLoginSubmit) {
+    btnLoginSubmit.addEventListener('click', () => {
+      const user = loginUsernameInput.value.trim().toLowerCase();
+      if (user) {
+        loginMockUser(user);
+      }
+    });
+  }
 
-  btnLogout.addEventListener('click', () => {
-    localStorage.removeItem('cmc_auth_token');
-    localStorage.removeItem('cmc_username');
-    tokenLabel.innerText = 'No session active';
-    document.getElementById('user-display-name').innerText = 'Guest';
-    document.getElementById('user-points').innerText = '0';
-    document.getElementById('user-level-badge').innerText = '1';
-    document.getElementById('user-level').innerText = '1';
-    document.getElementById('next-level').innerText = '2';
-    document.getElementById('user-level-progress').style.width = '0%';
-    document.getElementById('xp-text').innerText = 'Please sign in';
-  });
+  if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+      logoutUser();
+    });
+  }
 }
 
-function loginMockUser(username) {
+function showLoggedInState() {
+  const header = document.querySelector('.app-header');
+  const loginPortal = document.getElementById('login-portal');
+  const citizenView = document.getElementById('citizen-view');
+  const adminView = document.getElementById('admin-view');
+
+  if (header) header.style.display = 'flex';
+  if (loginPortal) loginPortal.style.display = 'none';
+
+  if (citizenView) citizenView.style.display = '';
+  if (adminView) adminView.style.display = '';
+
+  // Trigger map resize if admin view is active
+  const activeTabBtn = document.querySelector('.tab-btn.active');
+  if (activeTabBtn && activeTabBtn.getAttribute('data-tab') === 'admin-view') {
+    resizeMapCanvas();
+  }
+}
+
+function showLoggedOutState() {
+  const header = document.querySelector('.app-header');
+  const loginPortal = document.getElementById('login-portal');
+  const citizenView = document.getElementById('citizen-view');
+  const adminView = document.getElementById('admin-view');
+
+  if (header) header.style.display = 'none';
+  if (loginPortal) loginPortal.style.display = 'flex';
+  if (citizenView) citizenView.style.display = 'none';
+  if (adminView) adminView.style.display = 'none';
+}
+
+async function loginMockUser(username) {
   const token = `mock_token_${username}`;
   localStorage.setItem('cmc_auth_token', token);
   localStorage.setItem('cmc_username', username);
   
-  document.getElementById('auth-token-status').innerText = token;
-  updateUserProfile(username);
+  await updateUserProfile(username);
+  showLoggedInState();
+}
+
+function logoutUser() {
+  localStorage.removeItem('cmc_auth_token');
+  localStorage.removeItem('cmc_username');
+  
+  const userDisplayName = document.getElementById('user-display-name');
+  if (userDisplayName) userDisplayName.innerText = 'Guest';
+  
+  const userPoints = document.getElementById('user-points');
+  if (userPoints) userPoints.innerText = '0';
+  
+  const userLevelBadge = document.getElementById('user-level-badge');
+  if (userLevelBadge) userLevelBadge.innerText = '1';
+  
+  const userLevel = document.getElementById('user-level');
+  if (userLevel) userLevel.innerText = '1';
+  
+  const nextLevel = document.getElementById('next-level');
+  if (nextLevel) nextLevel.innerText = '2';
+  
+  const userLevelProgress = document.getElementById('user-level-progress');
+  if (userLevelProgress) userLevelProgress.style.width = '0%';
+  
+  const xpText = document.getElementById('xp-text');
+  if (xpText) xpText.innerText = 'Please sign in';
+
+  showLoggedOutState();
 }
 
 // Fetch user progression

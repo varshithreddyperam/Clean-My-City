@@ -499,3 +499,30 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255, 255, 255, 0.6) !important;
   border: 1px solid var(--border-color) !important;
 }
+
+/* Dedicated Login Portal Styling */
+#btn-login-submit {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-primary)) !important;
+  color: #ffffff !important;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.25);
+}
+
+#btn-login-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.35);
+}
+
+#login-username-input {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+#login-username-input:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 8px rgba(46, 125, 50, 0.15) !important;
+  outline: none;
+}

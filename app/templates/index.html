@@ -45,6 +45,25 @@
 
   <!-- Main Container -->
   <main class="app-container flex-1 max-w-[1600px] w-full mx-auto p-6 overflow-y-auto">
+
+    <!-- LOGIN PORTAL -->
+    <section id="login-portal" class="flex justify-center items-center min-h-[60vh] py-12">
+      <div class="card glass max-w-md w-full p-8 flex flex-col gap-6 text-center">
+        <div class="logo flex items-center justify-center gap-2 mb-2">
+          <i class="fa-solid fa-leaf text-3xl text-gradient"></i>
+          <span class="logo-text text-2xl font-bold tracking-wider font-display">CleanMy<span class="text-ecoaccent">City</span></span>
+        </div>
+        <p class="text-xs text-gray-500">Welcome to the Enterprise AI Waste Management Grid. Please authenticate to sync your account.</p>
+        
+        <div class="flex flex-col gap-3 text-left">
+          <label class="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Username</label>
+          <input type="text" id="login-username-input" placeholder="Type username (e.g. citizen_zero)..." class="w-full bg-slate-900 border border-slate-700/50 rounded-lg p-3 text-sm focus:outline-none focus:border-cyan-400 transition" value="citizen_zero">
+          <button id="btn-login-submit" class="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:opacity-90 text-white font-bold py-3 rounded-lg text-sm transition duration-200">
+            <i class="fa-solid fa-right-to-bracket mr-2"></i> Sync Account & Enter Portal
+          </button>
+        </div>
+      </div>
+    </section>
     
     <!-- CITIZEN VIEW -->
     <section id="citizen-view" class="tab-content active-content">
@@ -52,28 +71,6 @@
         
         <!-- Left: Auth & Profile Panel -->
         <div class="citizen-sidebar card glass p-6 flex flex-col gap-6">
-          
-          <!-- Firebase Auth Mock Widget -->
-          <div class="user-auth-widget card glass-dark p-4 rounded-xl border border-white/5">
-            <h3 class="text-xs uppercase tracking-wider text-gray-400 font-bold mb-3 flex items-center gap-2">
-              <i class="fa-solid fa-shield-halved text-cyan-400"></i> Auth Gateway
-            </h3>
-            <div class="flex flex-col gap-2.5">
-              <input type="text" id="auth-username-input" placeholder="Type citizen username..." class="w-full bg-slate-900 border border-slate-700/50 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-cyan-400 transition" value="citizen_zero">
-              <div class="flex gap-2">
-                <button id="btn-auth-mock-login" class="flex-grow bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 text-slate-950 font-bold py-2 px-3 rounded-lg text-xs transition duration-200">
-                  <i class="fa-solid fa-right-to-bracket"></i> Sync Account
-                </button>
-                <button id="btn-auth-logout" class="bg-slate-800 hover:bg-slate-700 text-gray-300 font-semibold py-2 px-3 rounded-lg text-xs transition duration-200">
-                  Sign Out
-                </button>
-              </div>
-              <div class="text-[10px] text-gray-500 mt-1 flex items-center gap-1">
-                <span class="font-semibold text-gray-400">Active Token:</span>
-                <span id="auth-token-status" class="text-cyan-400 truncate max-w-[200px]">mock_token_citizen_zero</span>
-              </div>
-            </div>
-          </div>
 
           <!-- User Stats Widget -->
           <div class="user-profile-widget border-b border-white/10 pb-6">
@@ -102,6 +99,10 @@
               </div>
               <div class="xp-needed text-[10px] text-gray-500 text-right" id="xp-text">0 / 150 points to Level Up</div>
             </div>
+            
+            <button id="btn-auth-logout" class="w-full mt-4 bg-slate-800 hover:bg-slate-700 text-gray-300 font-semibold py-2 px-3 rounded-lg text-xs transition duration-200">
+              <i class="fa-solid fa-right-from-bracket mr-1.5"></i> Sign Out
+            </button>
           </div>
 
           <!-- Badges shelf -->
