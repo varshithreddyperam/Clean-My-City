@@ -66,7 +66,7 @@ async def sse_events(request: Request):
         finally:
             active_listeners.discard(client_queue)
 
-    return EventSourceResponse(event_generator())
+    return EventSourceResponse(event_generator(), headers={"X-Accel-Buffering": "no"})
 
 # 2. REST API endpoints
 
