@@ -5,22 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CleanMyCity - Enterprise AI Waste Management Grid</title>
   
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            cyberblue: '#00f2fe',
-            cybernavy: '#0a0e17',
-            cyberdark: '#111827',
-            ecoaccent: '#10b981',
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Tailwind CSS (Static) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,7 +48,7 @@
     
     <!-- CITIZEN VIEW -->
     <section id="citizen-view" class="tab-content active-content">
-      <div class="citizen-layout grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 items-start">
+      <div class="citizen-layout items-start">
         
         <!-- Left: Auth & Profile Panel -->
         <div class="citizen-sidebar card glass p-6 flex flex-col gap-6">
@@ -196,7 +182,7 @@
               </div>
 
               <!-- Drag/Drop area -->
-              <div class="drag-drop-area cursor-pointer bg-black/30 border-2 border-dashed border-white/10 hover:border-cyan-400/50 hover:bg-black/40 rounded-xl h-[210px] flex justify-center items-center relative overflow-hidden transition duration-300" id="camera-drop-zone">
+              <div class="drag-drop-area cursor-pointer bg-black/30 border-2 border-dashed border-white/10 hover:border-cyan-400/50 hover:bg-black/40 rounded-xl flex justify-center items-center relative overflow-hidden transition duration-300" id="camera-drop-zone">
                 <input type="file" id="file-uploader" accept="image/*" style="display: none;">
                 <div class="drop-prompt text-center p-6 text-gray-400 flex flex-col items-center" id="drop-prompt-text">
                   <i class="fa-solid fa-folder-open text-3xl mb-3 text-white/40"></i>
@@ -246,7 +232,7 @@
             </div>
 
             <!-- Classification and Action triggers -->
-            <div class="results-action-panel grid grid-cols-1 md:grid-cols-[1fr_220px] gap-6 items-center border-t border-white/10 pt-4">
+            <div class="results-action-panel gap-6 items-center border-t border-white/10 pt-4">
               <div class="classification-output card glass-dark p-4 rounded-xl">
                 <div class="class-title text-xs font-bold text-gray-400 mb-2">Neural inference & Preprocessing statistics:</div>
                 <div class="class-results flex flex-col gap-2 text-xs">
@@ -296,7 +282,7 @@
 
     <!-- ADMIN / URBAN OPERATIONS VIEW -->
     <section id="admin-view" class="tab-content">
-      <div class="admin-grid grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6">
+      <div class="admin-grid">
         
         <!-- Live City Monitoring Map (Full Width Top) -->
         <div class="card glass p-6 map-panel col-span-1 lg:col-span-2">
@@ -310,7 +296,7 @@
 
             </div>
           </div>
-          <div class="city-map-container bg-black/40 border border-white/5 rounded-xl h-[360px] relative overflow-hidden">
+          <div class="city-map-container bg-black/40 border border-white/5 rounded-xl relative overflow-hidden">
             <div id="city-map" class="w-full h-full block"></div>
             <div class="map-overlay-stats absolute bottom-4 left-4 flex gap-2 z-[1000]">
               <div class="overlay-stat bg-black/80 border border-white/10 p-3 rounded-lg flex flex-col">
@@ -407,8 +393,8 @@
             <span class="text-xs text-gray-400">Transaction logs synced live from SQL / SQLite database</span>
           </div>
 
-          <div class="logs-feed-container bg-black/40 border border-white/5 rounded-xl overflow-hidden h-[360px] flex flex-col">
-            <div class="logs-header grid grid-cols-[70px_100px_90px_1fr] px-4 py-2 bg-white/5 border-b border-white/10 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+          <div class="logs-feed-container bg-black/40 border border-white/5 rounded-xl overflow-hidden flex flex-col">
+            <div class="logs-header px-4 py-2 bg-white/5 border-b border-white/10 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
               <span>Time</span>
               <span>Citizen</span>
               <span>Category</span>

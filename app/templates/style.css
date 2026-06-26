@@ -126,6 +126,7 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255, 255, 255, 0.8) !important;
   border-bottom: 1px solid var(--border-color) !important;
   backdrop-filter: blur(10px);
+  height: 70px;
 }
 
 /* Tabs System */
@@ -174,6 +175,7 @@ h1, h2, h3, h4, h5, h6 {
 .drag-drop-area {
   background: rgba(255, 255, 255, 0.45) !important;
   border-color: var(--border-color) !important;
+  height: 210px;
 }
 
 .drag-drop-area.dragover {
@@ -328,6 +330,44 @@ h1, h2, h3, h4, h5, h6 {
   transform: scale(1.05);
 }
 
+/* Layout helper fallbacks for static Tailwind CSS */
+.city-map-container {
+  height: 360px;
+}
+
+.logs-feed-container {
+  height: 360px;
+}
+
+.logs-header, .log-entry {
+  display: grid !important;
+  grid-template-columns: 70px 100px 90px 1fr !important;
+}
+
+@media (min-width: 1024px) {
+  .citizen-layout {
+    display: grid !important;
+    grid-template-columns: 360px 1fr !important;
+    gap: 1.5rem !important;
+  }
+  .admin-grid {
+    display: grid !important;
+    grid-template-columns: 1.3fr 1fr !important;
+    gap: 1.5rem !important;
+  }
+}
+
+.results-action-panel {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1.5rem !important;
+}
+@media (min-width: 768px) {
+  .results-action-panel {
+    grid-template-columns: 1fr 220px !important;
+  }
+}
+
 /* Map legend dots & overlays */
 .legend-item .dot {
   box-shadow: 0 0 6px currentColor;
@@ -337,6 +377,10 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255, 255, 255, 0.95) !important;
   border: 1px solid var(--border-color) !important;
   color: var(--text-main) !important;
+}
+
+.map-overlay-stats {
+  z-index: 1000 !important;
 }
 
 /* Scrollable log feed */
@@ -443,6 +487,7 @@ h1, h2, h3, h4, h5, h6 {
 #tx-details-modal {
   background: rgba(0, 0, 0, 0.3) !important;
   backdrop-filter: blur(5px);
+  z-index: 100 !important;
 }
 
 .image-preview-frame {
